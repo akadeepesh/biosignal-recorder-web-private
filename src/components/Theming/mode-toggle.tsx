@@ -1,0 +1,39 @@
+"use client";
+
+import * as React from "react";
+import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { useTheme } from "next-themes";
+
+import { Button } from "@/components/ui/button";
+
+export function ModeToggle({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
+  return (
+    <div className={className} {...props}>
+      <Button variant="ghost" size="sm" onClick={toggleTheme}>
+        {theme === "dark" ? (
+          <SunIcon width={20} height={20} />
+        ) : (
+          <MoonIcon width={20} height={20} />
+        )}
+      </Button>
+    </div>
+  );
+}
