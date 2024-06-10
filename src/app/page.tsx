@@ -1,20 +1,14 @@
-"use client";
-import Navbar from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
-
 import React from "react";
+import Navbar from "@/components/Navbar";
+import MainPage from "@/components/MainPage";
 
-const page = () => {
+const Page = () => {
   return (
     <div className="h-screen">
       <Navbar />
-      <div className="flex h-[80%] justify-center items-center">
-        <div className="">
-          <Button className="bg-primary">Connect</Button>
-        </div>
-      </div>
+      <MainPage />
     </div>
   );
 };
 
-export default page;
+export default Page;
