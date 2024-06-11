@@ -1,5 +1,6 @@
+"use client";
 import { Settings } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -8,7 +9,6 @@ import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -16,6 +16,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 const Canvas = () => {
+  const [speed, setSpeed] = useState("two");
+  const [height, setHeight] = useState(5);
   return (
     <div className="flex justify-center items-center flex-col h-[85%] w-screen">
       <div className="flex w-[70%] h-min justify-end items-center pb-1">
@@ -32,26 +34,35 @@ const Canvas = () => {
               <div className="flex flex-row gap-20 mt-5">
                 <div className="">Speed</div>
                 <RadioGroup
-                  defaultValue="option-two"
+                  defaultValue="two"
+                  value={speed}
+                  onValueChange={setSpeed}
                   className="flex flex-row gap-20"
                 >
                   <div className="flex justify-center items-center gap-2">
                     <Label>1</Label>
-                    <RadioGroupItem value="option-one" id="option-one" />
+                    <RadioGroupItem value="one" id="one" />
                   </div>
                   <div className="flex justify-center items-center gap-2">
                     <Label>2</Label>
-                    <RadioGroupItem value="option-two" id="option-two" />
+                    <RadioGroupItem value="two" id="two" />
                   </div>
                   <div className="flex justify-center items-center gap-2">
                     <Label>3</Label>
-                    <RadioGroupItem value="option-three" id="option-three" />
+                    <RadioGroupItem value="three" id="three" />
                   </div>
                 </RadioGroup>
               </div>
               <div className="flex flex-row gap-16">
                 <div className="">Height</div>
-                <Slider defaultValue={[5]} max={10} step={1} />
+                <Slider
+                  defaultValue={[5]}
+                  value={[height]}
+                  onValueChange={([value]) => setHeight(value)}
+                  max={10}
+                  step={1}
+                />
+                <div className="flex">{height}</div>
               </div>
               <div className="flex flex-row gap-14">
                 <div className="">Channels</div>
