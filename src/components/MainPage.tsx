@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { Button } from "./ui/button";
+import { Cable, CircleX } from "lucide-react";
+import { vendorsList } from "./vendors";
 
 const MainPage = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -17,6 +19,16 @@ const MainPage = () => {
     }
   };
 
+  function formatPortInfo(info: SerialPortInfo) {
+    if (!info || !info.usbVendorId) {
+      return "Port with no info";
+    }
+    const vendorName =
+      vendorsList.find((d) => parseInt(d.field_vid) === info.usbVendorId)
+        ?.name ?? "Unknown Vendor";
+    return vendorName + " - Product ID: " + info.usbProductId;
+  }
+
   const connectToDevice = async () => {
     try {
       const port = await navigator.serial.requestPort();
@@ -25,26 +37,7 @@ const MainPage = () => {
       portRef.current = port;
       const reader = port.readable?.getReader();
       readerRef.current = reader;
-      const decoder = new TextDecoder();
-      let lineBuffer = "";
-      console.log(isConnected); //Error : this is false somehow
-      while (!isConnected) {
-        const StreamData = await reader?.read();
-        if (StreamData?.done) {
-          console.log("Stream done");
-          break;
-        }
-        const receivedData = decoder.decode(StreamData?.value, {
-          stream: true,
-        });
-        const lines = (lineBuffer + receivedData).split("\n");
-        lineBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const dataValues = line.split(",");
-          //   processData(dataValues);
-          console.log(`Received Data: ${line}`);
-        }
-      }
+      readData();
     } catch (error) {
       console.error("Error connecting to device:", error);
       disconnectDevice();
@@ -66,6 +59,28 @@ const MainPage = () => {
     }
   };
 
+  const readData = async () => {
+    const decoder = new TextDecoder();
+    let lineBuffer = "";
+    while (!isConnected) {
+      const StreamData = await readerRef.current?.read();
+      if (StreamData?.done) {
+        console.log("Thank you for using the app!");
+        break;
+      }
+      const receivedData = decoder.decode(StreamData?.value, {
+        stream: true,
+      });
+      const lines = (lineBuffer + receivedData).split("\n");
+      lineBuffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const dataValues = line.split(",");
+        //   processData(dataValues);
+        console.log(`Received Data: ${dataValues}`);
+      }
+    }
+  };
+
   const writeData = async (data: string) => {
     try {
       if (isConnected && portRef.current && portRef.current.writable) {
@@ -84,10 +99,30 @@ const MainPage = () => {
   };
 
   return (
-    <div className="flex h-[80%] justify-center items-center">
+    <div className="flex h-[80%] justify-center flex-col gap-4 items-center">
+      {isConnected ? (
+        <div className="">
+          You are now Connected to{" "}
+          {portRef.current?.getInfo()
+            ? formatPortInfo(portRef.current?.getInfo()!)
+            : ""}
+        </div>
+      ) : (
+        <div className=""></div>
+      )}
       <div className="flex gap-4">
-        <Button className="bg-primary" onClick={handleClick}>
-          {isConnected ? "Disconnect" : "Connect"}
+        <Button className="bg-primary gap-2" onClick={handleClick}>
+          {isConnected ? (
+            <>
+              Disconnect
+              <CircleX size={17} />
+            </>
+          ) : (
+            <>
+              Connect
+              <Cable size={17} />
+            </>
+          )}
         </Button>
         <Button className="bg-primary" onClick={() => writeData("n")}>
           Write
