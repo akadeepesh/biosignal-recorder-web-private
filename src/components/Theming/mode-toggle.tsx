@@ -29,9 +29,9 @@ export function ModeToggle({
     <div className={className} {...props}>
       <Button variant="ghost" size="sm" onClick={toggleTheme}>
         {theme === "dark" ? (
-          <SunIcon width={20} height={20} />
+          <SunIcon width={16} height={16} />
         ) : (
-          <MoonIcon width={20} height={20} />
+          <MoonIcon width={16} height={16} />
         )}
       </Button>
     </div>

@@ -1,15 +1,28 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Cable, CircleX } from "lucide-react";
 import { vendorsList } from "./vendors";
+import { toast } from "sonner";
 
 const MainPage = () => {
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean>();
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
     ReadableStreamDefaultReader<Uint8Array> | null | undefined
   >(null);
+
+  useEffect(() => {
+    {
+      isConnected && portRef.current?.getInfo()
+        ? toast(
+            `You are now Connected to ${formatPortInfo(
+              portRef.current?.getInfo()
+            )!}`
+          )
+        : toast("Disconnected from device");
+    }
+  }, [isConnected]);
 
   const handleClick = () => {
     if (isConnected) {
@@ -40,7 +53,6 @@ const MainPage = () => {
       readData();
     } catch (error) {
       console.error("Error connecting to device:", error);
-      disconnectDevice();
     }
   };
 
@@ -75,8 +87,11 @@ const MainPage = () => {
       lineBuffer = lines.pop() ?? "";
       for (const line of lines) {
         const dataValues = line.split(",");
+        if (dataValues.length === 1) {
+          toast(`Received Data: ${line}`);
+        }
         //   processData(dataValues);
-        console.log(`Received Data: ${dataValues}`);
+        // console.log(`Received Data: ${dataValues}`);
       }
     }
   };
@@ -91,7 +106,7 @@ const MainPage = () => {
         writer.releaseLock();
         console.log("Data sent");
       } else {
-        alert("Device not connected");
+        toast("No device is connected");
       }
     } catch (error) {
       console.error("Error writing data to device:", error);
@@ -99,17 +114,7 @@ const MainPage = () => {
   };
 
   return (
-    <div className="flex h-[80%] justify-center flex-col gap-4 items-center">
-      {isConnected ? (
-        <div className="">
-          You are now Connected to{" "}
-          {portRef.current?.getInfo()
-            ? formatPortInfo(portRef.current?.getInfo()!)
-            : ""}
-        </div>
-      ) : (
-        <div className=""></div>
-      )}
+    <div className="flex h-14 justify-center flex-col gap-4 items-center sticky bottom-0">
       <div className="flex gap-4">
         <Button className="bg-primary gap-2" onClick={handleClick}>
           {isConnected ? (

@@ -22,7 +22,7 @@ const Navbar = () => {
             <ModeToggle />
             <Link href="https://github.com/upsidedownlabs" target="__blank">
               <Button variant={"ghost"} size={"sm"}>
-                <GitHubLogoIcon width={20} height={20} />
+                <GitHubLogoIcon width={24} height={24} />
               </Button>
             </Link>
           </div>
