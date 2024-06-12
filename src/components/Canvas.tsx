@@ -1,11 +1,11 @@
 "use client";
 import { Settings } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
-
+import { SmoothieChart, TimeSeries } from "smoothie";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "./ui/button";
 
+// import { useTheme } from "next-themes";
+
 const Canvas = () => {
+  // const { theme, setTheme } = useTheme();
+  // const [chartBack, setChartBack] = useState("rgba(2, 8, 23)");
   const isClient = typeof window !== "undefined";
 
   const [speed, setSpeed] = useState(() => {
@@ -69,6 +73,88 @@ const Canvas = () => {
       return updatedChannels;
     });
   };
+
+  // let millisperpixel = 4;
+  // useEffect(() => {
+  //   if (speed === "one") {
+  //     millisperpixel = 2;
+  //   } else if (speed === "two") {
+  //     millisperpixel = 4;
+  //   } else {
+  //     millisperpixel = 8;
+  //   }
+  // }, [speed]);
+
+  // useEffect(() => {
+  //   if (theme === "light") {
+  //     setChartBack("rgba(255, 255, 1)");
+  //   }
+  // }, [theme]);
+
+  const seriesRef = useRef(new TimeSeries());
+  const chartRef = useRef(
+    new SmoothieChart({
+      millisPerPixel: 20,
+      maxValueScale: 1.1,
+      minValueScale: 1,
+      interpolation: "bezier",
+      grid: {
+        borderVisible: true,
+        millisPerLine: 10000,
+        lineWidth: 1,
+        fillStyle: "rgba(2, 8, 23)",
+        verticalSections: 0,
+      },
+      tooltip: true,
+      tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
+      title: {
+        text: "Test Data",
+        fontSize: 16,
+        fillStyle: "#ffffff",
+        verticalAlign: "bottom",
+      },
+    })
+  );
+
+  useEffect(() => {
+    const series = seriesRef.current;
+    const chart = chartRef.current;
+
+    // TimeSeries options
+    chart.addTimeSeries(series, {
+      strokeStyle: "rgba(0, 255, 0, 0.8)",
+      lineWidth: 1,
+    });
+
+    const canvas = document.getElementById(
+      "smoothie-chart"
+    ) as HTMLCanvasElement;
+    if (canvas !== null) {
+      chart.streamTo(canvas, 500);
+    }
+
+    // data generation
+    const interval = setInterval(() => {
+      const randomValue = Math.random() * 10000;
+      series.append(Date.now(), randomValue);
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+      chart.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const randomValue = Math.random() * 10000;
+      seriesRef.current.append(Date.now(), randomValue);
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <div className="flex justify-center items-center flex-col h-[85%] w-screen">
@@ -167,7 +253,7 @@ const Canvas = () => {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="flex flex-col items-center mt-4">
+      {/* <div className="flex flex-col items-center mt-4">
         <div className="">
           Speed: <span id="speed-value"></span>
         </div>
@@ -177,8 +263,12 @@ const Canvas = () => {
         <div className="">
           Channels: <span id="channels-value"></span>
         </div>
-      </div>
-      <canvas className="border-2 w-[70%] h-[50%]"></canvas>
+      </div> */}
+      <canvas
+        id="smoothie-chart"
+        width="1075"
+        height={200 + (height - 1) * 40}
+      />
     </div>
   );
 };
