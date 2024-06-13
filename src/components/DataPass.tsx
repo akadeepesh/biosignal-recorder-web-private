@@ -1,5 +1,5 @@
 "use client";
-import MainPage from "@/components/MainPage";
+import Connection from "@/components/Connection";
 import Canvas from "@/components/Canvas";
 import { useState } from "react";
 
@@ -8,7 +8,7 @@ const DataPass = () => {
   return (
     <>
       <Canvas data={data} />
-      <MainPage LineData={setData} />
+      <Connection LineData={setData} />
     </>
   );
 };

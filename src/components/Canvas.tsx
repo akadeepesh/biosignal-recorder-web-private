@@ -80,10 +80,7 @@ const CanvasTry = ({ data }: { data: string }) => {
         "smoothie-chart"
       ) as HTMLCanvasElement;
       const chart = new SmoothieChart({
-        millisPerPixel: 10,
-        maxDataSetLength: 100,
-        maxValueScale: 1.1,
-        minValueScale: 1,
+        millisPerPixel: 2,
         interpolation: "bezier",
         grid: {
           borderVisible: true,
@@ -108,7 +105,7 @@ const CanvasTry = ({ data }: { data: string }) => {
         lineWidth: 1,
       });
 
-      chart.streamTo(canvas, 500);
+      chart.streamTo(canvas, 30);
 
       chartRef.current = chart;
       seriesRef.current = series;

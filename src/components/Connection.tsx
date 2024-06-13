@@ -5,7 +5,7 @@ import { Cable, CircleX } from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
 
-const MainPage = ({ LineData }: { LineData: Function }) => {
+const Connection = ({ LineData }: { LineData: Function }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
@@ -139,4 +139,4 @@ const MainPage = ({ LineData }: { LineData: Function }) => {
   );
 };
 
-export default MainPage;
+export default Connection;
