@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "./ui/button";
 
-const CanvasTry = ({ data }: { data: string }) => {
+const Canvas = ({ data }: { data: string }) => {
   const isClient = typeof window !== "undefined";
 
   const [speed, setSpeed] = useState(() => {
@@ -70,7 +70,7 @@ const CanvasTry = ({ data }: { data: string }) => {
     });
   };
 
-  const chartRef = useRef<(SmoothieChart | null)[]>([]);
+  const chartRef = useRef<SmoothieChart[]>([]);
   const seriesRef = useRef<(TimeSeries | null)[]>([]);
   const [isChartInitialized, setIsChartInitialized] = useState(false);
 
@@ -81,6 +81,11 @@ const CanvasTry = ({ data }: { data: string }) => {
           const canvas = document.getElementById(
             `smoothie-chart-${index + 1}`
           ) as HTMLCanvasElement;
+
+          const parentDiv = canvas.parentElement;
+          if (parentDiv) {
+            canvas.height = parentDiv.offsetHeight - 2;
+          }
 
           if (canvas) {
             const chart = new SmoothieChart({
@@ -118,10 +123,28 @@ const CanvasTry = ({ data }: { data: string }) => {
           }
         }
       });
-
+      switch (speed) {
+        case "one":
+          chartRef.current.forEach((chart) => {
+            chart.options.millisPerPixel = 8;
+          });
+          break;
+        case "two":
+          chartRef.current.forEach((chart) => {
+            chart.options.millisPerPixel = 4;
+          });
+          break;
+        case "three":
+          chartRef.current.forEach((chart) => {
+            chart.options.millisPerPixel = 2;
+          });
+          break;
+        default:
+          break;
+      }
       setIsChartInitialized(true);
     }
-  }, [isChartInitialized, channels]);
+  }, [isChartInitialized, channels, speed]);
 
   useEffect(() => {
     if (isChartInitialized) {
@@ -186,12 +209,13 @@ const CanvasTry = ({ data }: { data: string }) => {
               <div className="flex flex-row items-center gap-2">
                 <div className="">Height</div>
                 <Slider
+                  disabled
                   defaultValue={[5]}
                   value={[height]}
                   onValueChange={([value]) => setHeight(value)}
-                  max={10}
+                  max={8}
                   step={1}
-                  className=" ml-16"
+                  className="ml-16"
                 />
                 <Button
                   disabled
@@ -248,13 +272,12 @@ const CanvasTry = ({ data }: { data: string }) => {
       {channels.map((channel: any, index: number) => {
         if (channel) {
           return (
-            <div key={index} className="flex mb-10 flex-col items-center">
-              <div className="border border-secondary-foreground">
-                <canvas
-                  id={`smoothie-chart-${index + 1}`}
-                  width="1075"
-                  height={40 + (height - 2) * 10}
-                />
+            <div key={index} className="flex flex-col items-center">
+              <div
+                className="border border-secondary-foreground mb-4"
+                style={{ height: `${40 + (height - 2) * 10}px` }}
+              >
+                <canvas id={`smoothie-chart-${index + 1}`} width="1075" />
               </div>
             </div>
           );
@@ -265,4 +288,4 @@ const CanvasTry = ({ data }: { data: string }) => {
   );
 };
 
-export default CanvasTry;
+export default Canvas;
