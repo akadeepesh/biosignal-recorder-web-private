@@ -70,64 +70,83 @@ const CanvasTry = ({ data }: { data: string }) => {
     });
   };
 
-  const chartRef = useRef<SmoothieChart | null>(null);
-  const seriesRef = useRef<TimeSeries | null>(null);
+  const chartRef = useRef<(SmoothieChart | null)[]>([]);
+  const seriesRef = useRef<(TimeSeries | null)[]>([]);
   const [isChartInitialized, setIsChartInitialized] = useState(false);
 
   useEffect(() => {
     if (!isChartInitialized) {
-      const canvas = document.getElementById(
-        "smoothie-chart"
-      ) as HTMLCanvasElement;
-      const chart = new SmoothieChart({
-        millisPerPixel: 2,
-        interpolation: "bezier",
-        grid: {
-          borderVisible: true,
-          millisPerLine: 10000,
-          lineWidth: 1,
-          fillStyle: "rgba(2, 8, 23)",
-          verticalSections: 0,
-        },
-        tooltip: true,
-        tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
-        title: {
-          text: "Test Data",
-          fontSize: 16,
-          fillStyle: "#ffffff",
-          verticalAlign: "bottom",
-        },
+      channels.forEach((channel: any, index: number) => {
+        if (channel) {
+          const canvas = document.getElementById(
+            `smoothie-chart-${index + 1}`
+          ) as HTMLCanvasElement;
+
+          if (canvas) {
+            const chart = new SmoothieChart({
+              millisPerPixel: 2,
+              interpolation: "bezier",
+              grid: {
+                borderVisible: true,
+                millisPerLine: 10000,
+                lineWidth: 1,
+                fillStyle: "rgba(2, 8, 23)",
+                verticalSections: 0,
+              },
+              tooltip: true,
+              tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
+              title: {
+                text: `Channel ${index + 1}`,
+                fontSize: 16,
+                fillStyle: "#ffffff",
+                verticalAlign: "bottom",
+              },
+            });
+            const series = new TimeSeries();
+
+            chart.addTimeSeries(series, {
+              strokeStyle: "rgba(0, 255, 0, 0.8)",
+              lineWidth: 1,
+            });
+
+            chart.streamTo(canvas, 500);
+
+            if (chartRef.current && seriesRef.current) {
+              chartRef.current[index] = chart;
+              seriesRef.current[index] = series;
+            }
+          }
+        }
       });
-      const series = new TimeSeries();
 
-      chart.addTimeSeries(series, {
-        strokeStyle: "rgba(0, 255, 0, 0.8)",
-        lineWidth: 1,
-      });
-
-      chart.streamTo(canvas, 30);
-
-      chartRef.current = chart;
-      seriesRef.current = series;
       setIsChartInitialized(true);
     }
-  }, [isChartInitialized]);
+  }, [isChartInitialized, channels]);
 
   useEffect(() => {
     if (isChartInitialized) {
-      const series = seriesRef.current;
       const lines = String(data).split("\n");
       for (const line of lines) {
         if (line.trim() !== "") {
           const sensorValues = line.split(",").map(Number).slice(2);
-          const data = sensorValues[0];
-          if (!isNaN(data)) {
-            series?.append(Date.now(), data);
-          }
+          channels.forEach((channel: any, index: number) => {
+            if (channel) {
+              const canvas = document.getElementById(
+                `smoothie-chart-${index + 1}`
+              );
+              if (canvas) {
+                const data = sensorValues[index];
+                if (!isNaN(data)) {
+                  const series = seriesRef.current[index];
+                  series?.append(Date.now(), data);
+                }
+              }
+            }
+          });
         }
       }
     }
-  }, [data, isChartInitialized]);
+  }, [data, isChartInitialized, channels]);
 
   return (
     <div className="flex justify-center items-center flex-col h-[85%] w-screen">
@@ -226,12 +245,22 @@ const CanvasTry = ({ data }: { data: string }) => {
           </DialogContent>
         </Dialog>
       </div>
-      <canvas
-        id="smoothie-chart"
-        style={{ width: "80%", height: "50%" }}
-        width="1075"
-        height={200 + (height - 1) * 40}
-      />
+      {channels.map((channel: any, index: number) => {
+        if (channel) {
+          return (
+            <div key={index} className="flex mb-10 flex-col items-center">
+              <div className="border border-secondary-foreground">
+                <canvas
+                  id={`smoothie-chart-${index + 1}`}
+                  width="1075"
+                  height={40 + (height - 2) * 10}
+                />
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })}
     </div>
   );
 };
