@@ -5,8 +5,8 @@ import { Cable, CircleX } from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
 
-const MainPage = () => {
-  const [isConnected, setIsConnected] = useState<boolean>();
+const MainPage = ({ LineData }: { LineData: Function }) => {
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
     ReadableStreamDefaultReader<Uint8Array> | null | undefined
@@ -89,6 +89,8 @@ const MainPage = () => {
         const dataValues = line.split(",");
         if (dataValues.length === 1) {
           toast(`Received Data: ${line}`);
+        } else {
+          LineData(dataValues);
         }
         //   processData(dataValues);
         // console.log(`Received Data: ${dataValues}`);

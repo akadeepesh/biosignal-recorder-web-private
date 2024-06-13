@@ -16,11 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "./ui/button";
 
-// import { useTheme } from "next-themes";
-
-const Canvas = () => {
-  // const { theme, setTheme } = useTheme();
-  // const [chartBack, setChartBack] = useState("rgba(2, 8, 23)");
+const CanvasTry = ({ data }: { data: string }) => {
   const isClient = typeof window !== "undefined";
 
   const [speed, setSpeed] = useState(() => {
@@ -74,87 +70,67 @@ const Canvas = () => {
     });
   };
 
-  // let millisperpixel = 4;
-  // useEffect(() => {
-  //   if (speed === "one") {
-  //     millisperpixel = 2;
-  //   } else if (speed === "two") {
-  //     millisperpixel = 4;
-  //   } else {
-  //     millisperpixel = 8;
-  //   }
-  // }, [speed]);
+  const chartRef = useRef<SmoothieChart | null>(null);
+  const seriesRef = useRef<TimeSeries | null>(null);
+  const [isChartInitialized, setIsChartInitialized] = useState(false);
 
-  // useEffect(() => {
-  //   if (theme === "light") {
-  //     setChartBack("rgba(255, 255, 1)");
-  //   }
-  // }, [theme]);
+  useEffect(() => {
+    if (!isChartInitialized) {
+      const canvas = document.getElementById(
+        "smoothie-chart"
+      ) as HTMLCanvasElement;
+      const chart = new SmoothieChart({
+        millisPerPixel: 10,
+        maxDataSetLength: 100,
+        maxValueScale: 1.1,
+        minValueScale: 1,
+        interpolation: "bezier",
+        grid: {
+          borderVisible: true,
+          millisPerLine: 10000,
+          lineWidth: 1,
+          fillStyle: "rgba(2, 8, 23)",
+          verticalSections: 0,
+        },
+        tooltip: true,
+        tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
+        title: {
+          text: "Test Data",
+          fontSize: 16,
+          fillStyle: "#ffffff",
+          verticalAlign: "bottom",
+        },
+      });
+      const series = new TimeSeries();
 
-  const seriesRef = useRef(new TimeSeries());
-  const chartRef = useRef(
-    new SmoothieChart({
-      millisPerPixel: 20,
-      maxValueScale: 1.1,
-      minValueScale: 1,
-      interpolation: "bezier",
-      grid: {
-        borderVisible: true,
-        millisPerLine: 10000,
+      chart.addTimeSeries(series, {
+        strokeStyle: "rgba(0, 255, 0, 0.8)",
         lineWidth: 1,
-        fillStyle: "rgba(2, 8, 23)",
-        verticalSections: 0,
-      },
-      tooltip: true,
-      tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
-      title: {
-        text: "Test Data",
-        fontSize: 16,
-        fillStyle: "#ffffff",
-        verticalAlign: "bottom",
-      },
-    })
-  );
+      });
 
-  useEffect(() => {
-    const series = seriesRef.current;
-    const chart = chartRef.current;
-
-    // TimeSeries options
-    chart.addTimeSeries(series, {
-      strokeStyle: "rgba(0, 255, 0, 0.8)",
-      lineWidth: 1,
-    });
-
-    const canvas = document.getElementById(
-      "smoothie-chart"
-    ) as HTMLCanvasElement;
-    if (canvas !== null) {
       chart.streamTo(canvas, 500);
+
+      chartRef.current = chart;
+      seriesRef.current = series;
+      setIsChartInitialized(true);
     }
-
-    // data generation
-    const interval = setInterval(() => {
-      const randomValue = Math.random() * 10000;
-      series.append(Date.now(), randomValue);
-    }, 500);
-
-    return () => {
-      clearInterval(interval);
-      chart.stop();
-    };
-  }, []);
+  }, [isChartInitialized]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const randomValue = Math.random() * 10000;
-      seriesRef.current.append(Date.now(), randomValue);
-    }, 500);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+    if (isChartInitialized) {
+      const series = seriesRef.current;
+      const lines = String(data).split("\n");
+      for (const line of lines) {
+        if (line.trim() !== "") {
+          const sensorValues = line.split(",").map(Number).slice(2);
+          const data = sensorValues[0];
+          if (!isNaN(data)) {
+            series?.append(Date.now(), data);
+          }
+        }
+      }
+    }
+  }, [data, isChartInitialized]);
 
   return (
     <div className="flex justify-center items-center flex-col h-[85%] w-screen">
@@ -253,19 +229,9 @@ const Canvas = () => {
           </DialogContent>
         </Dialog>
       </div>
-      {/* <div className="flex flex-col items-center mt-4">
-        <div className="">
-          Speed: <span id="speed-value"></span>
-        </div>
-        <div className="">
-          Height: <span id="height-value"></span>
-        </div>
-        <div className="">
-          Channels: <span id="channels-value"></span>
-        </div>
-      </div> */}
       <canvas
         id="smoothie-chart"
+        style={{ width: "80%", height: "50%" }}
         width="1075"
         height={200 + (height - 1) * 40}
       />
@@ -273,4 +239,4 @@ const Canvas = () => {
   );
 };
 
-export default Canvas;
+export default CanvasTry;
