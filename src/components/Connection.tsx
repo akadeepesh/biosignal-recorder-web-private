@@ -92,8 +92,6 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         } else {
           LineData(dataValues);
         }
-        //   processData(dataValues);
-        // console.log(`Received Data: ${dataValues}`);
       }
     }
   };
@@ -134,6 +132,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         <Button className="bg-primary" onClick={() => writeData("n")}>
           Write
         </Button>
+        <Button>Save</Button>
       </div>
     </div>
   );

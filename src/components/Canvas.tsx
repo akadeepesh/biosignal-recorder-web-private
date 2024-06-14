@@ -1,5 +1,5 @@
 "use client";
-import { Settings } from "lucide-react";
+import { Settings, Pause, Play } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,8 @@ const Canvas = ({ data }: { data: string }) => {
     return [true, false, false, false, false, false];
   });
 
+  const [isPaused, setIsPaused] = useState(Array(channels.length).fill(false));
+
   useEffect(() => {
     if (isClient) {
       localStorage.setItem("speed", speed);
@@ -85,19 +87,24 @@ const Canvas = ({ data }: { data: string }) => {
           const parentDiv = canvas.parentElement;
           if (parentDiv) {
             canvas.height = parentDiv.offsetHeight - 2;
+            canvas.width = parentDiv.offsetWidth;
           }
 
           if (canvas) {
             const chart = new SmoothieChart({
-              millisPerPixel: 2,
+              millisPerPixel: 10,
               interpolation: "bezier",
               grid: {
                 borderVisible: true,
-                millisPerLine: 10000,
+                millisPerLine: 250,
                 lineWidth: 1,
                 fillStyle: "rgba(2, 8, 23)",
-                verticalSections: 0,
+                // verticalSections: 6,
               },
+              // labels: {
+              //   fillStyle: "white",
+              //   showIntermediateLabels: true,
+              // },
               tooltip: true,
               tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
               title: {
@@ -123,28 +130,32 @@ const Canvas = ({ data }: { data: string }) => {
           }
         }
       });
-      switch (speed) {
-        case "one":
-          chartRef.current.forEach((chart) => {
-            chart.options.millisPerPixel = 8;
-          });
-          break;
-        case "two":
-          chartRef.current.forEach((chart) => {
-            chart.options.millisPerPixel = 4;
-          });
-          break;
-        case "three":
-          chartRef.current.forEach((chart) => {
-            chart.options.millisPerPixel = 2;
-          });
-          break;
-        default:
-          break;
-      }
+
       setIsChartInitialized(true);
     }
-  }, [isChartInitialized, channels, speed]);
+  }, [isChartInitialized, channels]);
+
+  const updateSpeed = () => {
+    switch (speed) {
+      case "one":
+        chartRef.current.forEach((chart) => {
+          chart.options.millisPerPixel = 8;
+        });
+        break;
+      case "two":
+        chartRef.current.forEach((chart) => {
+          chart.options.millisPerPixel = 4;
+        });
+        break;
+      case "three":
+        chartRef.current.forEach((chart) => {
+          chart.options.millisPerPixel = 2;
+        });
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     if (isChartInitialized) {
@@ -171,6 +182,25 @@ const Canvas = ({ data }: { data: string }) => {
     }
   }, [data, isChartInitialized, channels]);
 
+  const handleSpeedChange = (newSpeed: string) => {
+    setSpeed(newSpeed);
+    updateSpeed();
+  };
+
+  const handlePauseClick = (index: number) => {
+    setIsPaused((prevIsPaused) => {
+      const updatedIsPaused = [...prevIsPaused];
+      updatedIsPaused[index] = !prevIsPaused[index];
+
+      if (updatedIsPaused[index]) {
+        chartRef.current[index].stop();
+      } else {
+        chartRef.current[index]?.start();
+      }
+      return updatedIsPaused;
+    });
+  };
+
   return (
     <div className="flex justify-center items-center flex-col h-[85%] w-screen">
       <div className="flex w-[70%] h-min justify-end items-center pb-1">
@@ -189,7 +219,7 @@ const Canvas = ({ data }: { data: string }) => {
                 <RadioGroup
                   defaultValue="two"
                   value={speed}
-                  onValueChange={setSpeed}
+                  onValueChange={handleSpeedChange}
                   className="flex flex-row gap-20"
                 >
                   <div className="flex justify-center items-center gap-2">
@@ -272,12 +302,22 @@ const Canvas = ({ data }: { data: string }) => {
       {channels.map((channel: any, index: number) => {
         if (channel) {
           return (
-            <div key={index} className="flex flex-col items-center">
+            <div key={index} className="flex flex-row gap-4 max-w-7xl w-full">
               <div
-                className="border border-secondary-foreground mb-4"
+                className="border border-secondary-foreground mb-4 w-full"
                 style={{ height: `${40 + (height - 2) * 10}px` }}
               >
-                <canvas id={`smoothie-chart-${index + 1}`} width="1075" />
+                <canvas id={`smoothie-chart-${index + 1}`} />
+              </div>
+              <div className="flex items-center mb-2">
+                <Button
+                  variant={"outline"}
+                  className=" border-primary"
+                  onClick={() => handlePauseClick(index)}
+                  size={"sm"}
+                >
+                  {isPaused[index] ? <Play size={16} /> : <Pause size={16} />}
+                </Button>
               </div>
             </div>
           );
