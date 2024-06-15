@@ -99,12 +99,7 @@ const Canvas = ({ data }: { data: string }) => {
                 millisPerLine: 250,
                 lineWidth: 1,
                 fillStyle: "rgba(2, 8, 23)",
-                // verticalSections: 6,
               },
-              // labels: {
-              //   fillStyle: "white",
-              //   showIntermediateLabels: true,
-              // },
               tooltip: true,
               tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
               title: {

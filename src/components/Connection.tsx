@@ -7,20 +7,26 @@ import { toast } from "sonner";
 
 const Connection = ({ LineData }: { LineData: Function }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const isConnectedRef = useRef<boolean>(false);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const isRecordingRef = useRef<boolean>(false);
+  const [buffer, setBuffer] = useState<string[][]>([]);
+  const [datasets, setDatasets] = useState<string[][][]>([]);
+
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
     ReadableStreamDefaultReader<Uint8Array> | null | undefined
   >(null);
 
   useEffect(() => {
-    {
-      isConnected && portRef.current?.getInfo()
-        ? toast(
-            `You are now Connected to ${formatPortInfo(
-              portRef.current?.getInfo()
-            )!}`
-          )
-        : toast("Disconnected from device");
+    if (isConnected && portRef.current?.getInfo()) {
+      toast(
+        `You are now Connected to ${formatPortInfo(
+          portRef.current?.getInfo()!
+        )}`
+      );
+    } else {
+      toast("Disconnected from device");
     }
   }, [isConnected]);
 
@@ -39,7 +45,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
     const vendorName =
       vendorsList.find((d) => parseInt(d.field_vid) === info.usbVendorId)
         ?.name ?? "Unknown Vendor";
-    return vendorName + " - Product ID: " + info.usbProductId;
+    return `${vendorName} - Product ID: ${info.usbProductId}`;
   }
 
   const connectToDevice = async () => {
@@ -47,6 +53,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: 115200 });
       setIsConnected(true);
+      isConnectedRef.current = true;
       portRef.current = port;
       const reader = port.readable?.getReader();
       readerRef.current = reader;
@@ -64,6 +71,9 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         readerRef.current.releaseLock();
       }
       setIsConnected(false);
+      isConnectedRef.current = false;
+      setIsRecording(false);
+      isRecordingRef.current = false;
       portRef.current = null;
       readerRef.current = null;
     } catch (error) {
@@ -74,15 +84,14 @@ const Connection = ({ LineData }: { LineData: Function }) => {
   const readData = async () => {
     const decoder = new TextDecoder();
     let lineBuffer = "";
-    while (!isConnected) {
+    while (isConnectedRef.current) {
+      // Use ref for the loop condition
       const StreamData = await readerRef.current?.read();
       if (StreamData?.done) {
         console.log("Thank you for using the app!");
         break;
       }
-      const receivedData = decoder.decode(StreamData?.value, {
-        stream: true,
-      });
+      const receivedData = decoder.decode(StreamData?.value, { stream: true });
       const lines = (lineBuffer + receivedData).split("\n");
       lineBuffer = lines.pop() ?? "";
       for (const line of lines) {
@@ -91,8 +100,39 @@ const Connection = ({ LineData }: { LineData: Function }) => {
           toast(`Received Data: ${line}`);
         } else {
           LineData(dataValues);
+          if (isRecordingRef.current) {
+            setBuffer((prevBuffer) => {
+              const newBuffer = [...prevBuffer, dataValues];
+              console.log("Buffer updated:", newBuffer);
+              return newBuffer;
+            });
+          }
         }
       }
+    }
+  };
+
+  const handleRecord = () => {
+    if (isConnected) {
+      if (isRecording) {
+        if (buffer.length > 0) {
+          setDatasets((prevDatasets) => {
+            const newDatasets = [...prevDatasets, buffer];
+            console.log("Datasets updated:", newDatasets);
+            return newDatasets;
+          });
+        }
+        setBuffer([]);
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        console.log("Recording stopped.");
+      } else {
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        console.log("Recording started.");
+      }
+    } else {
+      toast("No device is connected");
     }
   };
 
@@ -104,7 +144,6 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         const dataToSend = encoder.encode(`${data}\n`);
         await writer.write(dataToSend);
         writer.releaseLock();
-        console.log("Data sent");
       } else {
         toast("No device is connected");
       }
@@ -129,10 +168,12 @@ const Connection = ({ LineData }: { LineData: Function }) => {
             </>
           )}
         </Button>
-        <Button className="bg-primary" onClick={() => writeData("n")}>
+        <Button className="bg-primary" onClick={() => writeData("c")}>
           Write
         </Button>
-        <Button>Save</Button>
+        <Button onClick={handleRecord}>
+          {isRecording ? "Stop Recording" : "Start Recording"}
+        </Button>
       </div>
     </div>
   );
