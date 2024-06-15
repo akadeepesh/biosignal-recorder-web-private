@@ -20,7 +20,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const Connection = ({ LineData }: { LineData: Function }) => {
+const Connection = ({
+  LineData,
+  Connection,
+}: {
+  LineData: Function;
+  Connection: Function;
+}) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const isConnectedRef = useRef<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -67,6 +73,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
     try {
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: 115200 });
+      Connection(true);
       setIsConnected(true);
       isConnectedRef.current = true;
       portRef.current = port;
@@ -86,6 +93,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         readerRef.current.releaseLock();
       }
       setIsConnected(false);
+      Connection(false);
       isConnectedRef.current = false;
       setIsRecording(false);
       isRecordingRef.current = false;

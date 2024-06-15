@@ -1,19 +1,19 @@
 "use client";
-import { Settings, Pause, Play } from "lucide-react";
+import { Pause, Play } from "lucide-react"; // Settings
 import React, { useEffect, useRef, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
+// import { Checkbox } from "@/components/ui/checkbox";
+// import { Label } from "@/components/ui/label";
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+// import { Slider } from "@/components/ui/slider";
 import { SmoothieChart, TimeSeries } from "smoothie";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+//   DialogTrigger,
+// } from "@/components/ui/dialog";
+// import { Separator } from "@/components/ui/separator";
 import { Button } from "./ui/button";
 
 const Canvas = ({ data }: { data: string }) => {
@@ -64,13 +64,13 @@ const Canvas = ({ data }: { data: string }) => {
     }
   }, [speed, height, channels, isClient]);
 
-  const handleChannelChange = (index: number) => {
-    setChannels((prevChannels: any) => {
-      const updatedChannels = [...prevChannels];
-      updatedChannels[index] = !prevChannels[index];
-      return updatedChannels;
-    });
-  };
+  // const handleChannelChange = (index: number) => {
+  //   setChannels((prevChannels: any) => {
+  //     const updatedChannels = [...prevChannels];
+  //     updatedChannels[index] = !prevChannels[index];
+  //     return updatedChannels;
+  //   });
+  // };
 
   const chartRef = useRef<SmoothieChart[]>([]);
   const seriesRef = useRef<(TimeSeries | null)[]>([]);
@@ -100,8 +100,6 @@ const Canvas = ({ data }: { data: string }) => {
                 lineWidth: 1,
                 fillStyle: "rgba(2, 8, 23)",
               },
-              tooltip: true,
-              tooltipLine: { lineWidth: 1, strokeStyle: "#fffff" },
               title: {
                 text: `Channel ${index + 1}`,
                 fontSize: 16,
@@ -130,27 +128,27 @@ const Canvas = ({ data }: { data: string }) => {
     }
   }, [isChartInitialized, channels]);
 
-  const updateSpeed = () => {
-    switch (speed) {
-      case "one":
-        chartRef.current.forEach((chart) => {
-          chart.options.millisPerPixel = 8;
-        });
-        break;
-      case "two":
-        chartRef.current.forEach((chart) => {
-          chart.options.millisPerPixel = 4;
-        });
-        break;
-      case "three":
-        chartRef.current.forEach((chart) => {
-          chart.options.millisPerPixel = 2;
-        });
-        break;
-      default:
-        break;
-    }
-  };
+  // const updateSpeed = () => {
+  //   switch (speed) {
+  //     case "one":
+  //       chartRef.current.forEach((chart) => {
+  //         chart.options.millisPerPixel = 8;
+  //       });
+  //       break;
+  //     case "two":
+  //       chartRef.current.forEach((chart) => {
+  //         chart.options.millisPerPixel = 4;
+  //       });
+  //       break;
+  //     case "three":
+  //       chartRef.current.forEach((chart) => {
+  //         chart.options.millisPerPixel = 2;
+  //       });
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // };
 
   useEffect(() => {
     if (isChartInitialized) {
@@ -177,10 +175,10 @@ const Canvas = ({ data }: { data: string }) => {
     }
   }, [data, isChartInitialized, channels]);
 
-  const handleSpeedChange = (newSpeed: string) => {
-    setSpeed(newSpeed);
-    updateSpeed();
-  };
+  // const handleSpeedChange = (newSpeed: string) => {
+  //   setSpeed(newSpeed);
+  //   updateSpeed();
+  // };
 
   const handlePauseClick = (index: number) => {
     setIsPaused((prevIsPaused) => {

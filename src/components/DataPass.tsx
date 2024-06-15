@@ -1,18 +1,16 @@
 "use client";
 import Connection from "@/components/Connection";
+import Steps from "@/components/Steps";
 import { useState } from "react";
-import dynamic from "next/dynamic";
-
-const ComponentCanva = dynamic(() => import("@/components/Canvas"), {
-  ssr: false,
-});
+import Canvas from "@/components/Canvas";
 
 const DataPass = () => {
   const [data, setData] = useState("");
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   return (
     <>
-      <ComponentCanva data={data} />
-      <Connection LineData={setData} />
+      {isConnected ? <Canvas data={data} /> : <Steps />}
+      <Connection LineData={setData} Connection={setIsConnected} />
     </>
   );
 };
