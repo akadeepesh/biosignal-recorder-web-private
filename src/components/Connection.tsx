@@ -1,11 +1,17 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Cable, CircleX } from "lucide-react";
+import { Cable, CircleStop, CircleX, FileDown, Video } from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Connection = ({ LineData }: { LineData: Function }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -114,7 +120,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
 
   const columnNames = [
     "Counter",
-    "Timer",
+    "Time",
     "Channel 1",
     "Channel 2",
     "Channel 3",
@@ -201,10 +207,40 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         <Button className="bg-primary" onClick={() => writeData("c")}>
           Write
         </Button>
-        <Button onClick={handleRecord}>
-          {isRecording ? "Stop Recording" : "Start Recording"}
-        </Button>
-        <Button onClick={saveDataAsZip}>Save</Button>
+        {isConnected ? (
+          <TooltipProvider>
+            <Tooltip>
+              <Button
+                onClick={handleRecord}
+                className={`${
+                  !isRecording ? "hover:bg-red-600" : "bg-primary"
+                } `}
+              >
+                <TooltipTrigger asChild>
+                  {isRecording ? <CircleStop /> : <Video />}
+                </TooltipTrigger>
+              </Button>
+              <TooltipContent>
+                <p>{!isRecording ? "Start Recording" : "Stop Recording"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
+
+        {datasets.length > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <Button onClick={saveDataAsZip}>
+                <TooltipTrigger asChild>
+                  <FileDown />
+                </TooltipTrigger>
+              </Button>
+              <TooltipContent>
+                <p>Save As Zip</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
       </div>
     </div>
   );
