@@ -40,9 +40,9 @@ const Canvas = ({ data }: { data: string }) => {
       const storedChannels = localStorage.getItem("channels");
       return storedChannels
         ? JSON.parse(storedChannels)
-        : [true, false, false, false, false, false];
+        : [true, true, true, true, false, false];
     }
-    return [true, false, false, false, false, false];
+    return [true, true, true, true, false, false];
   });
 
   const [isPaused, setIsPaused] = useState(Array(channels.length).fill(false));
@@ -198,7 +198,7 @@ const Canvas = ({ data }: { data: string }) => {
 
   return (
     <div className="flex justify-center items-center flex-col h-[85%] w-screen">
-      <div className="flex w-[70%] h-min justify-end items-center pb-1">
+      {/* <div className="flex w-[70%] h-min justify-end items-center pb-1">
         <Dialog>
           <DialogTrigger className="hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm p-2">
             <Settings size={20} opacity={0.5} />
@@ -293,7 +293,7 @@ const Canvas = ({ data }: { data: string }) => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </div> */}
       {channels.map((channel: any, index: number) => {
         if (channel) {
           return (

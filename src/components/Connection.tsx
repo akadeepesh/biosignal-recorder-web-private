@@ -1,7 +1,14 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Cable, CircleStop, CircleX, FileDown, Video } from "lucide-react";
+import {
+  Cable,
+  CircleStop,
+  CircleX,
+  FileArchive,
+  FileDown,
+  Video,
+} from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
 import JSZip from "jszip";
@@ -162,14 +169,22 @@ const Connection = ({ LineData }: { LineData: Function }) => {
     isRecordingRef.current = false;
   };
 
-  const saveDataAsZip = async () => {
-    const zip = new JSZip();
-    datasets.forEach((data, index) => {
-      const csvData = convertToCSV(data);
-      zip.file(`data${index + 1}.csv`, csvData);
-    });
-    const zipContent = await zip.generateAsync({ type: "blob" });
-    saveAs(zipContent, "datasets.zip");
+  const saveData = async () => {
+    if (datasets.length === 1) {
+      const csvData = convertToCSV(datasets[0]);
+      const blob = new Blob([csvData], { type: "text/csv;charset=utf-8" });
+      saveAs(blob, "data.csv");
+    } else if (datasets.length > 1) {
+      const zip = new JSZip();
+      datasets.forEach((data, index) => {
+        const csvData = convertToCSV(data);
+        zip.file(`data${index + 1}.csv`, csvData);
+      });
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      saveAs(zipContent, "datasets.zip");
+    } else {
+      toast("No data available to download.");
+    }
   };
 
   const writeData = async (data: string) => {
@@ -230,13 +245,17 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         {datasets.length > 0 ? (
           <TooltipProvider>
             <Tooltip>
-              <Button onClick={saveDataAsZip}>
+              <Button onClick={saveData}>
                 <TooltipTrigger asChild>
-                  <FileDown />
+                  {datasets.length === 1 ? <FileDown /> : <FileArchive />}
                 </TooltipTrigger>
               </Button>
               <TooltipContent>
-                <p>Save As Zip</p>
+                {datasets.length === 1 ? (
+                  <p>Save As CSV</p>
+                ) : (
+                  <p>Save As Zip</p>
+                )}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
