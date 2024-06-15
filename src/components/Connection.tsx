@@ -4,6 +4,8 @@ import { Button } from "./ui/button";
 import { Cable, CircleX } from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const Connection = ({ LineData }: { LineData: Function }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -85,7 +87,6 @@ const Connection = ({ LineData }: { LineData: Function }) => {
     const decoder = new TextDecoder();
     let lineBuffer = "";
     while (isConnectedRef.current) {
-      // Use ref for the loop condition
       const StreamData = await readerRef.current?.read();
       if (StreamData?.done) {
         console.log("Thank you for using the app!");
@@ -103,7 +104,6 @@ const Connection = ({ LineData }: { LineData: Function }) => {
           if (isRecordingRef.current) {
             setBuffer((prevBuffer) => {
               const newBuffer = [...prevBuffer, dataValues];
-              console.log("Buffer updated:", newBuffer);
               return newBuffer;
             });
           }
@@ -112,28 +112,58 @@ const Connection = ({ LineData }: { LineData: Function }) => {
     }
   };
 
+  const columnNames = [
+    "Counter",
+    "Timer",
+    "Channel 1",
+    "Channel 2",
+    "Channel 3",
+    "Channel 4",
+    "Channel 5",
+    "Channel 6",
+  ];
+
+  const convertToCSV = (buffer: string[][]): string => {
+    const headerRow = columnNames.join(",");
+    const rows = buffer.map((row) => row.map(Number).join(","));
+    const csvData = [headerRow, ...rows].join("\n");
+    return csvData;
+  };
+
   const handleRecord = () => {
     if (isConnected) {
       if (isRecording) {
-        if (buffer.length > 0) {
-          setDatasets((prevDatasets) => {
-            const newDatasets = [...prevDatasets, buffer];
-            console.log("Datasets updated:", newDatasets);
-            return newDatasets;
-          });
-        }
-        setBuffer([]);
-        setIsRecording(false);
-        isRecordingRef.current = false;
-        console.log("Recording stopped.");
+        stopRecording();
       } else {
         setIsRecording(true);
         isRecordingRef.current = true;
-        console.log("Recording started.");
       }
     } else {
       toast("No device is connected");
     }
+  };
+
+  const stopRecording = () => {
+    if (buffer.length > 0) {
+      const data = buffer;
+      setDatasets((prevDatasets) => {
+        const newDatasets = [...prevDatasets, data];
+        return newDatasets;
+      });
+      setBuffer([]);
+    }
+    setIsRecording(false);
+    isRecordingRef.current = false;
+  };
+
+  const saveDataAsZip = async () => {
+    const zip = new JSZip();
+    datasets.forEach((data, index) => {
+      const csvData = convertToCSV(data);
+      zip.file(`data${index + 1}.csv`, csvData);
+    });
+    const zipContent = await zip.generateAsync({ type: "blob" });
+    saveAs(zipContent, "datasets.zip");
   };
 
   const writeData = async (data: string) => {
@@ -174,6 +204,7 @@ const Connection = ({ LineData }: { LineData: Function }) => {
         <Button onClick={handleRecord}>
           {isRecording ? "Stop Recording" : "Start Recording"}
         </Button>
+        <Button onClick={saveDataAsZip}>Save</Button>
       </div>
     </div>
   );
