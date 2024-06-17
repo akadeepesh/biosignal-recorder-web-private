@@ -65,7 +65,7 @@ const Steps = () => {
             >
               <div className="p-1">
                 <Card className="border-primary">
-                  <CardContent className="flex aspect-square items-center justify-center p-6 group">
+                  <CardContent className="flex aspect-square items-center justify-center p-6">
                     {index % 2 === 0 ? (
                       <div className="">
                         {index === 0 && (
@@ -137,7 +137,7 @@ const Steps = () => {
                         {index === 4 && (
                           <div className="flex mb-14 flex-col">
                             <span className="text-xl font-semibold mb-14">
-                              Electrodes placement for EEG
+                              Electrodes placement for EMG
                               <Separator className="bg-primary" />
                             </span>
                             <div className="flex justify-center items-center">
@@ -165,7 +165,7 @@ const Steps = () => {
                       <img
                         alt={`Step ${index + 1}`}
                         src={ImageLinks[Math.floor(index / 2)]}
-                        className="rounded-xl h-60 group-hover:h-80 transition-all duration-300 ease-in-out"
+                        className="rounded-xl h-60"
                       />
                     )}
                   </CardContent>
