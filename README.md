@@ -48,3 +48,7 @@ BioSignal Web Recorder is an application based on Web Serial connection, you can
 - [Lodash](https://lodash.com/): Utility library for data manipulation, used for data throttling.
 - [JSZip](https://stuk.github.io/jszip/): Library for creating and manipulating ZIP files, used for save recordings as ZIP.
 - [Smoothie Js](http://smoothiecharts.org/): Real time charting library.
+
+## Resources
+
+- [Vendors](https://github.com/akadeepesh/biosignal-recorder-web-private/blob/master/src/components/vendors.ts) list for board name and there vendor id are taken from [Stackblitz](https://stackblitz.com/edit/typescript-web-serial?file=vendors.ts) created by [William Grasel](https://github.com/willgm)
