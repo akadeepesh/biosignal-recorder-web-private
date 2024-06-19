@@ -30,11 +30,11 @@ const Steps = () => {
   ];
 
   return (
-    <div className="flex justify-center items-center gap-4 flex-col h-[85%] w-screen ">
+    <div className="flex justify-center items-center gap-4 flex-col h-[85%]">
       <div className="flex items-center justify-center text-xl">
         <span className="flex flex-row gap-2">
           Click{" "}
-          <Badge>
+          <Badge className="cursor-default">
             <p className="text-base">&quot;Connect&quot;</p>
           </Badge>{" "}
           For Board Connection.
@@ -44,7 +44,7 @@ const Steps = () => {
         For More Detailed Steps Please Refer{" "}
         <Link
           href={
-            "https://docs.upsidedownlabs.tech/hardware/bioamp/bioamp-exg-pill/index.html#step-6-measuring-electromyography-emg"
+            "https://docs.upsidedownlabs.tech/hardware/bioamp/bioamp-exg-pill/index.html"
           }
           className="underline underline-offset-2"
         >

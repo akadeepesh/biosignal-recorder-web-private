@@ -1,3 +1,5 @@
+// List created by https://stackblitz.com/edit/typescript-web-serial?file=vendors.ts [Willgm] - https://github.com/willgm
+
 export const vendorsList = Object.freeze([
   {
     name: "(AVL) DiTEST Fahrzeugdiagnose GmbH",

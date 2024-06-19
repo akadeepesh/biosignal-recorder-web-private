@@ -38,6 +38,23 @@ const Contributors = () => {
               <Separator className="bg-primary" />
             </CardHeader>
             <CardContent className="flex justify-center items-center gap-5">
+              <Link href={"https://github.com/akadeepesh"}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant={"ghost"} size={"sm"}>
+                        <Avatar>
+                          <AvatarImage src="https://avatars.githubusercontent.com/u/108585048?v=4" />
+                          <AvatarFallback>Aleksa</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Aleksa Zdravković</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Link>
               <Link href={"https://github.com/lorforlinux"} target="__blank">
                 <TooltipProvider>
                   <Tooltip>
@@ -51,6 +68,23 @@ const Contributors = () => {
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Deepak Khatri</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Link>
+              <Link href={"https://github.com/akadeepesh"}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant={"ghost"} size={"sm"}>
+                        <Avatar>
+                          <AvatarImage src="https://avatars.githubusercontent.com/u/100466756?v=4" />
+                          <AvatarFallback>Deepesh</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Deepesh Kumar</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -85,40 +119,6 @@ const Contributors = () => {
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Ritika Mishra</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Link>
-              <Link href={"https://github.com/akadeepesh"}>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant={"ghost"} size={"sm"}>
-                        <Avatar>
-                          <AvatarImage src="https://avatars.githubusercontent.com/u/108585048?v=4" />
-                          <AvatarFallback>Aleksa</AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Aleksa Zdravković</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Link>
-              <Link href={"https://github.com/akadeepesh"}>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant={"ghost"} size={"sm"}>
-                        <Avatar>
-                          <AvatarImage src="https://avatars.githubusercontent.com/u/100466756?v=4" />
-                          <AvatarFallback>Deepesh</AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Deepesh Kumar</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

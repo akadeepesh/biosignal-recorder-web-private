@@ -212,7 +212,7 @@ const Connection = ({
   };
 
   return (
-    <div className="flex h-14 justify-center flex-col gap-4 items-center sticky bottom-0">
+    <div className="flex h-14 justify-center items-center">
       <div className="flex gap-4">
         <Button className="bg-primary gap-2" onClick={handleClick}>
           {isConnected ? (
@@ -255,7 +255,14 @@ const Connection = ({
             <Tooltip>
               <Button onClick={saveData}>
                 <TooltipTrigger asChild>
-                  {datasets.length === 1 ? <FileDown /> : <FileArchive />}
+                  {datasets.length === 1 ? (
+                    <FileDown />
+                  ) : (
+                    <span className="flex flex-row justify-center items-center">
+                      <FileArchive />
+                      <p className=" text-lg">{`(${datasets.length})`}</p>
+                    </span>
+                  )}
                 </TooltipTrigger>
               </Button>
               <TooltipContent>

@@ -10,7 +10,7 @@ import Contributors from "./Contributors";
 const Navbar = () => {
   return (
     <div>
-      <div className="sticky top-0 left-5 right-5 md:left-0 md:right-0 flex backdrop-blur-sm justify-center py-[10px] border-b items-center font-bold z-50">
+      <div className="top-0 left-5 right-5 md:left-0 md:right-0 flex backdrop-blur-sm justify-center py-[10px] border-b items-center font-bold z-50">
         <div className="flex w-full max-w-screen mx-16 justify-between items-center">
           <a className="text-primary font-medium text-xl" href="/">
             BioSignal Recorder

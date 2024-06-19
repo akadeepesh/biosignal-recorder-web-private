@@ -7,7 +7,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BioSignal Recorder Web",
+  title: "BioSignal Recorder",
   description: "Web Serial based BioSignal recorder applicaion.",
 };
 
