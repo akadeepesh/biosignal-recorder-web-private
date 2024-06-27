@@ -12,20 +12,14 @@ import { Button } from "./ui/button";
 import throttle from "lodash/throttle";
 import FFTCanvas from "./FFTCanvas";
 import { useTheme } from "next-themes";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Card, CardContent } from "./ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "./ui/select";
 
 const Canvas = ({ data }: { data: string }) => {
   const { theme } = useTheme();
@@ -251,7 +245,12 @@ const Canvas = ({ data }: { data: string }) => {
         })}
       </div>
       <div className="w-1/3">
-        <FFTCanvas data={data} maxFreq={100} />
+        <div className="flex flex-col h-full justify-center items-center">
+          <div className="flex h-1/2">
+            <FFTCanvas data={data} maxFreq={100} />
+          </div>
+          {/* <div className="flex h-1/2">Hello world</div> */}
+        </div>
       </div>
     </div>
   );

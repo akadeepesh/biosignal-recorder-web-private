@@ -249,14 +249,9 @@ const Connection = ({
         {isConnected ? (
           <TooltipProvider>
             <Tooltip>
-              <Button
-                onClick={handleRecord}
-                className={`${
-                  !isRecording ? "hover:bg-red-600" : "bg-primary"
-                } `}
-              >
+              <Button onClick={handleRecord}>
                 <TooltipTrigger asChild>
-                  {isRecording ? <CircleStop /> : <Circle />}
+                  {isRecording ? <CircleStop /> : <Circle fill="red" />}
                 </TooltipTrigger>
               </Button>
               <TooltipContent>
