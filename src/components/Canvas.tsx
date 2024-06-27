@@ -177,23 +177,19 @@ const Canvas = ({ data }: { data: string }) => {
     updateChartColors,
   ]);
 
-  const handlePauseClick = useCallback((index: number) => {
+  const handlePauseClick = (index: number) => {
     setIsPaused((prevIsPaused) => {
-      const newIsPaused = [...prevIsPaused];
-      newIsPaused[index] = !newIsPaused[index];
+      const updatedIsPaused = [...prevIsPaused];
+      updatedIsPaused[index] = !prevIsPaused[index];
 
-      const chart = chartRef.current[index];
-      if (chart) {
-        if (newIsPaused[index]) {
-          chart.stop();
-        } else {
-          chart.start();
-        }
+      if (updatedIsPaused[index]) {
+        chartRef.current[index].stop();
+      } else {
+        chartRef.current[index].start();
       }
-
-      return newIsPaused;
+      return updatedIsPaused;
     });
-  }, []);
+  };
 
   return (
     <div className="flex justify-center items-center flex-row h-[85%] w-screen px-4 gap-10">
