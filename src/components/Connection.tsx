@@ -135,7 +135,6 @@ const Connection = ({
 
   const columnNames = [
     "Counter",
-    "Time",
     "Channel 1",
     "Channel 2",
     "Channel 3",

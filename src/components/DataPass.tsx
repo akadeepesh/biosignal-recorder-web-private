@@ -1,8 +1,8 @@
 "use client";
-import Connection from "@/components/Connection";
-import Steps from "@/components/Steps";
-import { useState } from "react";
-import Canvas from "@/components/Canvas";
+import Connection from "./Connection";
+import Steps from "./Steps";
+import React, { useState } from "react";
+import Canvas from "./Canvas";
 
 const DataPass = () => {
   const [data, setData] = useState("");
