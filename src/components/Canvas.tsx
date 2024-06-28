@@ -20,8 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { BitSelection } from "./DataPass";
 
-const Canvas = ({ data }: { data: string }) => {
+interface CanvasProps {
+  data: string;
+  selectedBits: BitSelection;
+}
+
+const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
   const { theme } = useTheme();
 
   const channels = useMemo(() => [true, true, true, true, false, false], []);
@@ -31,7 +37,6 @@ const Canvas = ({ data }: { data: string }) => {
   const chartRef = useRef<SmoothieChart[]>([]);
   const seriesRef = useRef<(TimeSeries | null)[]>([]);
   const [isChartInitialized, setIsChartInitialized] = useState(false);
-  const [selectedBits, setSelectedBits] = useState("auto");
 
   const getThemeColors = useCallback(() => {
     return theme === "dark"
@@ -49,7 +54,7 @@ const Canvas = ({ data }: { data: string }) => {
         };
   }, [theme]);
 
-  const getMaxValue = useCallback((bits: string): number => {
+  const getMaxValue = useCallback((bits: BitSelection): number => {
     switch (bits) {
       case "ten":
         return 1024;
@@ -62,7 +67,7 @@ const Canvas = ({ data }: { data: string }) => {
     }
   }, []);
 
-  const shouldAutoScale = useCallback((bits: string): boolean => {
+  const shouldAutoScale = useCallback((bits: BitSelection): boolean => {
     return bits === "auto";
   }, []);
 
@@ -247,22 +252,6 @@ const Canvas = ({ data }: { data: string }) => {
 
   return (
     <div className="flex justify-center items-center flex-row h-[85%] w-screen px-4 gap-10">
-      <div className="absolute right-1/3 top-28">
-        <Select
-          onValueChange={(value) => setSelectedBits(value)}
-          value={selectedBits}
-        >
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Select bits" />
-          </SelectTrigger>
-          <SelectContent side="top">
-            <SelectItem value="ten">10 bits</SelectItem>
-            <SelectItem value="twelve">12 bits</SelectItem>
-            <SelectItem value="fourteen">14 bits</SelectItem>
-            <SelectItem value="auto">Auto Scale</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
       <div className="flex justify-center items-center flex-col h-[85%] w-3/4">
         {channels.map((channel, index) => {
           if (channel) {

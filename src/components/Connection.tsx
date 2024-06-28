@@ -8,7 +8,6 @@ import {
   CircleX,
   FileArchive,
   FileDown,
-  Video,
 } from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
@@ -20,13 +19,27 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { BitSelection } from "./DataPass";
 
-const Connection = ({
+interface ConnectionProps {
+  LineData: Function;
+  Connection: (isConnected: boolean) => void;
+  selectedBits: BitSelection;
+  setSelectedBits: React.Dispatch<React.SetStateAction<BitSelection>>;
+}
+
+const Connection: React.FC<ConnectionProps> = ({
   LineData,
   Connection,
-}: {
-  LineData: Function;
-  Connection: Function;
+  selectedBits,
+  setSelectedBits,
 }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const isConnectedRef = useRef<boolean>(false);
@@ -39,6 +52,10 @@ const Connection = ({
   const readerRef = useRef<
     ReadableStreamDefaultReader<Uint8Array> | null | undefined
   >(null);
+
+  const handleBitSelection = (value: string) => {
+    setSelectedBits(value as BitSelection);
+  };
 
   useEffect(() => {
     if (isConnected && portRef.current?.getInfo()) {
@@ -245,6 +262,24 @@ const Connection = ({
         {/* <Button className="bg-primary" onClick={() => writeData("c")}>
           Write
         </Button> */}
+        {isConnected ? (
+          <div className="">
+            <Select
+              onValueChange={(value) => handleBitSelection(value)}
+              value={selectedBits}
+            >
+              <SelectTrigger className="w-32 text-background bg-primary">
+                <SelectValue placeholder="Select bits" />
+              </SelectTrigger>
+              <SelectContent side="top">
+                <SelectItem value="ten">10 bits</SelectItem>
+                <SelectItem value="twelve">12 bits</SelectItem>
+                <SelectItem value="fourteen">14 bits</SelectItem>
+                <SelectItem value="auto">Auto Scale</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         {isConnected ? (
           <TooltipProvider>
             <Tooltip>
