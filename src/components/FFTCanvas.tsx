@@ -1,18 +1,27 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { useTheme } from "next-themes";
 
 interface FFTGraphProps {
-  data: string[] | string | number[];
+  data: string;
   maxFreq?: number;
 }
+
 const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [fftData, setFftData] = useState<number[]>([]);
+  const [fftData, setFftData] = useState<number[][]>([[], [], [], []]);
   const fftSize = 128;
   const samplingRate = 250;
-  const fftBufferRef = useRef<number[]>([]);
+  const fftBufferRef = useRef<number[][]>([[], [], [], []]);
   const { theme } = useTheme();
+
+  const channelColors = useMemo(() => ["red", "green", "blue", "purple"], []);
 
   const fft = useCallback((signal: number[]): { re: number; im: number }[] => {
     const n = signal.length;
@@ -100,34 +109,39 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
   };
 
   const processData = useCallback(
-    (input: string[] | string | number[]) => {
-      let values: number[];
-
-      if (typeof input === "string") {
-        values = input.trim().split(",").map(Number);
-      } else if (Array.isArray(input)) {
-        values = input.map(Number);
-      } else {
-        return;
-      }
-
-      if (values && values.length >= 2) {
-        let sensorValue = values[1];
-        if (!isNaN(sensorValue)) {
-          fftBufferRef.current.push(sensorValue);
-          if (fftBufferRef.current.length >= fftSize) {
-            const windowedBuffer = applyHannWindow(fftBufferRef.current);
-            let fftResult = fft(windowedBuffer);
-            const newFftData = fftResult
-              .slice(0, fftSize / 2)
-              .map((c) => Math.sqrt(c.re * c.re + c.im * c.im));
-            setFftData(newFftData);
-            fftBufferRef.current = [];
+    (input: string) => {
+      const lines = String(input).split("\n");
+      lines.forEach((line) => {
+        if (line.trim() !== "") {
+          const values = line.split(",").map(Number);
+          if (values.length >= 5) {
+            // Ensure we have at least 4 channels plus the counter
+            for (let i = 0; i < 4; i++) {
+              let sensorValue = values[i + 1];
+              if (!isNaN(sensorValue)) {
+                fftBufferRef.current[i].push(sensorValue);
+                if (fftBufferRef.current[i].length >= fftSize) {
+                  const windowedBuffer = applyHannWindow(
+                    fftBufferRef.current[i]
+                  );
+                  let fftResult = fft(windowedBuffer);
+                  const newFftData = fftResult
+                    .slice(0, fftSize / 2)
+                    .map((c) => Math.sqrt(c.re * c.re + c.im * c.im));
+                  setFftData((prevData) => {
+                    const newData = [...prevData];
+                    newData[i] = newFftData;
+                    return newData;
+                  });
+                  fftBufferRef.current[i] = [];
+                }
+              }
+            }
           }
         }
-      }
+      });
     },
-    [fftSize, fft, setFftData, fftBufferRef]
+    [fftSize, fft]
   );
 
   const plotData = useCallback(() => {
@@ -146,20 +160,16 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Calculate the number of data points to display based on maxFreq
-    const freqStep = samplingRate / (2 * fftData.length);
-    const displayPoints = Math.min(
-      Math.ceil(maxFreq / freqStep),
-      fftData.length
-    );
+    const freqStep = samplingRate / (2 * fftSize);
+    const displayPoints = Math.min(Math.ceil(maxFreq / freqStep), fftSize / 2);
 
     const xScale = (width - 90) / displayPoints;
-    const yMax = Math.max(...fftData.slice(0, displayPoints));
+    const yMax = Math.max(
+      ...fftData.flatMap((channel) => channel.slice(0, displayPoints))
+    );
     const yScale = yMax > 0 ? (height - 60) / yMax : 1;
 
-    // Set colors based on theme
     const axisColor = theme === "dark" ? "white" : "black";
-    const graphColor = "green";
 
     // Draw axes
     ctx.beginPath();
@@ -169,17 +179,20 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     ctx.strokeStyle = axisColor;
     ctx.stroke();
 
-    // Plot the data
-    ctx.beginPath();
-    ctx.strokeStyle = graphColor;
-    for (let i = 0; i < displayPoints; i++) {
-      const x = 50 + i * xScale;
-      const y = height - 50 - fftData[i] * yScale;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
+    // Plot the data for each channel
+    fftData.forEach((channelData, index) => {
+      ctx.beginPath();
+      ctx.strokeStyle = channelColors[index];
+      for (let i = 0; i < displayPoints; i++) {
+        const x = 50 + i * xScale;
+        const y = height - 50 - (channelData[i] || 0) * yScale;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
 
+    // Draw labels and axes
     ctx.fillStyle = axisColor;
     ctx.font = "12px Arial";
 
@@ -187,10 +200,6 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     for (let i = 0; i <= 5; i++) {
       const labelY = height - 50 - (i / 5) * (height - 60);
       ctx.fillText(((yMax * i) / 5).toFixed(1), 5, labelY);
-      ctx.beginPath();
-      ctx.moveTo(45, labelY);
-      ctx.lineTo(55, labelY);
-      ctx.stroke();
     }
 
     // X-axis labels
@@ -199,18 +208,22 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
       const freq = i * 10;
       const labelX = 50 + (freq / freqStep) * xScale;
       ctx.fillText(freq.toString(), labelX, height - 30);
-      ctx.beginPath();
-      ctx.moveTo(labelX, height - 55);
-      ctx.lineTo(labelX, height - 45);
-      ctx.stroke();
     }
 
     ctx.font = "14px Arial";
     ctx.fillText("Frequency (Hz)", width / 2, height - 10);
-    ctx.save();
-    ctx.rotate(-Math.PI / 2);
-    ctx.restore();
-  }, [fftData, theme, maxFreq, samplingRate]);
+
+    // Draw legend at top right
+    const legendX = width - 120;
+    const legendY = 20;
+    ctx.font = "12px Arial";
+    channelColors.forEach((color, index) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(legendX, legendY + index * 20, 15, 15);
+      ctx.fillStyle = axisColor;
+      ctx.fillText(`Ch ${index + 1}`, legendX + 20, legendY + index * 20 + 12);
+    });
+  }, [fftData, theme, maxFreq, samplingRate, fftSize, channelColors]);
 
   useEffect(() => {
     drawPlaceholderGraph();
@@ -230,9 +243,7 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
-      if (fftData.length > 0) {
-        plotData();
-      }
+      plotData();
     });
 
     if (containerRef.current) {
@@ -240,7 +251,7 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     }
 
     return () => resizeObserver.disconnect();
-  }, [fftData.length, plotData]);
+  }, [plotData]);
 
   return (
     <div ref={containerRef} className="w-full  h-[400px] max-w-[700px]">

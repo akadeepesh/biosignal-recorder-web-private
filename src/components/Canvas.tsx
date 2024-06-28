@@ -31,6 +31,7 @@ const Canvas = ({ data }: { data: string }) => {
   const chartRef = useRef<SmoothieChart[]>([]);
   const seriesRef = useRef<(TimeSeries | null)[]>([]);
   const [isChartInitialized, setIsChartInitialized] = useState(false);
+  const [selectedBits, setSelectedBits] = useState("auto");
 
   const getThemeColors = useCallback(() => {
     return theme === "dark"
@@ -48,6 +49,23 @@ const Canvas = ({ data }: { data: string }) => {
         };
   }, [theme]);
 
+  const getMaxValue = useCallback((bits: string): number => {
+    switch (bits) {
+      case "ten":
+        return 1024;
+      case "twelve":
+        return 4096;
+      case "fourteen":
+        return 16384;
+      default:
+        return Infinity;
+    }
+  }, []);
+
+  const shouldAutoScale = useCallback((bits: string): boolean => {
+    return bits === "auto";
+  }, []);
+
   const updateChartColors = useCallback(() => {
     const colors = getThemeColors();
     chartRef.current.forEach((chart, index) => {
@@ -61,6 +79,14 @@ const Canvas = ({ data }: { data: string }) => {
         if (chart.options.labels && chart.options.title) {
           chart.options.labels.fillStyle = colors.text;
           chart.options.title.fillStyle = colors.text;
+        }
+
+        if (shouldAutoScale(selectedBits)) {
+          chart.options.maxValue = undefined;
+          chart.options.minValue = undefined;
+        } else {
+          chart.options.maxValue = getMaxValue(selectedBits);
+          chart.options.minValue = 0;
         }
 
         const series = seriesRef.current[index];
@@ -81,7 +107,7 @@ const Canvas = ({ data }: { data: string }) => {
         );
       }
     });
-  }, [getThemeColors]);
+  }, [getThemeColors, selectedBits, getMaxValue, shouldAutoScale]);
 
   const handleDataUpdate = useCallback(
     (line: string) => {
@@ -107,7 +133,7 @@ const Canvas = ({ data }: { data: string }) => {
   );
 
   const throttledHandleDataUpdate = useMemo(
-    () => throttle(handleDataUpdate, 100),
+    () => throttle(handleDataUpdate, 50),
     [handleDataUpdate]
   );
 
@@ -141,6 +167,10 @@ const Canvas = ({ data }: { data: string }) => {
               labels: {
                 fillStyle: colors.text,
               },
+              minValue: shouldAutoScale(selectedBits) ? undefined : 0,
+              maxValue: shouldAutoScale(selectedBits)
+                ? undefined
+                : getMaxValue(selectedBits),
             });
             const series = new TimeSeries();
 
@@ -161,23 +191,45 @@ const Canvas = ({ data }: { data: string }) => {
 
       setIsChartInitialized(true);
     }
-  }, [isChartInitialized, channels, getThemeColors]);
+  }, [
+    isChartInitialized,
+    channels,
+    getThemeColors,
+    selectedBits,
+    getMaxValue,
+    shouldAutoScale,
+  ]);
 
   useEffect(() => {
     if (isChartInitialized) {
-      updateChartColors();
+      chartRef.current.forEach((chart) => {
+        if (chart) {
+          if (shouldAutoScale(selectedBits)) {
+            chart.options.maxValue = undefined;
+            chart.options.minValue = undefined;
+          } else {
+            chart.options.maxValue = getMaxValue(selectedBits);
+            chart.options.minValue = 0;
+          }
+        }
+      });
+    }
+  }, [selectedBits, isChartInitialized, getMaxValue, shouldAutoScale]);
+
+  useEffect(() => {
+    if (isChartInitialized) {
       const lines = String(data).split("\n");
       lines.forEach((line) => {
         throttledHandleDataUpdate(line);
       });
     }
-  }, [
-    data,
-    isChartInitialized,
-    throttledHandleDataUpdate,
-    theme,
-    updateChartColors,
-  ]);
+  }, [data, isChartInitialized, throttledHandleDataUpdate, theme]);
+
+  useEffect(() => {
+    if (isChartInitialized) {
+      updateChartColors();
+    }
+  }, [theme, isChartInitialized, updateChartColors]);
 
   const handlePauseClick = (index: number) => {
     setIsPaused((prevIsPaused) => {
@@ -196,11 +248,14 @@ const Canvas = ({ data }: { data: string }) => {
   return (
     <div className="flex justify-center items-center flex-row h-[85%] w-screen px-4 gap-10">
       <div className="absolute right-1/3 top-28">
-        <Select>
+        <Select
+          onValueChange={(value) => setSelectedBits(value)}
+          value={selectedBits}
+        >
           <SelectTrigger className="w-32">
             <SelectValue placeholder="Select bits" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent side="top">
             <SelectItem value="ten">10 bits</SelectItem>
             <SelectItem value="twelve">12 bits</SelectItem>
             <SelectItem value="fourteen">14 bits</SelectItem>
@@ -234,7 +289,7 @@ const Canvas = ({ data }: { data: string }) => {
                           <Pause size={14} />
                         )}
                       </Button>
-                      <p className=" text-sm">{`Ch-${index + 1}`}</p>
+                      <p className="text-[10px]">{`Ch-${index + 1}`}</p>
                     </CardContent>
                   </Card>
                 </div>

@@ -142,7 +142,6 @@ const Connection = ({
           }
         }
       } catch (error) {
-        toast("Error reading from device");
         console.error("Error reading from device:", error);
         break;
       }
