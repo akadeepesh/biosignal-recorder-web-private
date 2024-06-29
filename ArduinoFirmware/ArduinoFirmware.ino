@@ -90,10 +90,10 @@ void loop()
     if (dataReady)
     {
         dataReady = false;
-        static uint16_t counter = 0;
+        static uint8_t counter = 0;
         while (head != tail)
         {
-            Serial.print(counter++);
+            Serial.print(counter++); // This will automatically wrap around to 0 after 255
             for (int i = 0; i < CHANNEL_COUNT; i++)
             {
                 Serial.print(',');
