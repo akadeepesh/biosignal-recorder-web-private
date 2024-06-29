@@ -136,7 +136,7 @@ const Connection: React.FC<ConnectionProps> = ({
       try {
         const StreamData = await readerRef.current?.read();
         if (StreamData?.done) {
-          console.log("Stream closed");
+          console.log("Thank you for using our app!");
           break;
         }
         const receivedData = decoder.decode(StreamData?.value, {

@@ -212,17 +212,6 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
 
     ctx.font = "14px Arial";
     ctx.fillText("Frequency (Hz)", width / 2, height - 10);
-
-    // Draw legend at top right
-    const legendX = width - 120;
-    const legendY = 20;
-    ctx.font = "12px Arial";
-    channelColors.forEach((color, index) => {
-      ctx.fillStyle = color;
-      ctx.fillRect(legendX, legendY + index * 20, 15, 15);
-      ctx.fillStyle = axisColor;
-      ctx.fillText(`Ch ${index + 1}`, legendX + 20, legendY + index * 20 + 12);
-    });
   }, [fftData, theme, maxFreq, samplingRate, fftSize, channelColors]);
 
   useEffect(() => {

@@ -21,12 +21,10 @@
 // SOFTWARE.
 // Samples per second
 #define SAMPLE_RATE 250
-// Make sure to set the same baud rate on your Serial Monitor/Plotter
 #define BAUD_RATE 115200
-// Change if not using A0 analog pin
-#define INPUT_PIN A0
-#define Channel_Count 6
-#define Resolution 10
+#define BUFFER_SIZE 100
+#define CHANNEL_COUNT 6
+#define RESOLUTION 10
 
 const uint16_t samplingRange[] = {125, 250, 500, 1000};
 volatile uint8_t head = 0;
@@ -92,10 +90,10 @@ void loop()
     if (dataReady)
     {
         dataReady = false;
-        static uint8_t counter = 0;
+        static uint16_t counter = 0;
         while (head != tail)
         {
-            Serial.print(counter++); // This will automatically wrap around to 0 after 255
+            Serial.print(counter++);
             for (int i = 0; i < CHANNEL_COUNT; i++)
             {
                 Serial.print(',');

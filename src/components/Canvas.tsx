@@ -30,6 +30,11 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
   const seriesRef = useRef<(TimeSeries | null)[]>([]);
   const [isChartInitialized, setIsChartInitialized] = useState(false);
 
+  const getChannelColor = useCallback((index: number) => {
+    const colors = ["red", "green", "blue", "purple"];
+    return colors[index] || colors[colors.length - 1];
+  }, []);
+
   const getThemeColors = useCallback(() => {
     return theme === "dark"
       ? {
@@ -90,7 +95,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
         if (series) {
           chart.removeTimeSeries(series);
           chart.addTimeSeries(series, {
-            strokeStyle: colors.line,
+            strokeStyle: getChannelColor(index),
             lineWidth: 1,
           });
         }
@@ -104,7 +109,13 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
         );
       }
     });
-  }, [getThemeColors, selectedBits, getMaxValue, shouldAutoScale]);
+  }, [
+    getThemeColors,
+    selectedBits,
+    getMaxValue,
+    shouldAutoScale,
+    getChannelColor,
+  ]);
 
   const handleDataUpdate = useCallback(
     (line: string) => {
@@ -167,7 +178,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
             const series = new TimeSeries();
 
             chart.addTimeSeries(series, {
-              strokeStyle: colors.line,
+              strokeStyle: getChannelColor(index),
               lineWidth: 1,
             });
 
@@ -190,6 +201,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
     selectedBits,
     getMaxValue,
     shouldAutoScale,
+    getChannelColor,
   ]);
 
   useEffect(() => {
@@ -251,11 +263,11 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
                   />
                 </div>
                 <div className="absolute top-1/2 right-0 -mr-5 -mt-7 z-10">
-                  <Card className="bg-secondary rounded-2xl">
+                  <Card className="bg-secondary border-primary rounded-2xl">
                     <CardContent className="flex flex-col p-1 items-center justify-center gap-2">
                       <Button
                         variant={"outline"}
-                        className="border-primary hover:bg-destructive w-7 h-7 p-0 rounded-full"
+                        className="border-muted-foreground hover:bg-destructive w-7 h-7 p-0 rounded-full"
                         onClick={() => handlePauseClick(index)}
                         size={"sm"}
                       >
@@ -265,7 +277,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
                           <Pause size={14} />
                         )}
                       </Button>
-                      <p className="text-[10px]">{`Ch-${index + 1}`}</p>
+                      <p className="text-[10px]">{`CH${index + 1}`}</p>
                     </CardContent>
                   </Card>
                 </div>
