@@ -9,17 +9,9 @@ import React, {
 } from "react";
 import { SmoothieChart, TimeSeries } from "smoothie";
 import { Button } from "./ui/button";
-import throttle from "lodash/throttle";
 import FFTCanvas from "./FFTCanvas";
 import { useTheme } from "next-themes";
 import { Card, CardContent } from "./ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import { BitSelection } from "./DataPass";
 
 interface CanvasProps {
@@ -137,11 +129,6 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
     [channels, isPaused]
   );
 
-  const throttledHandleDataUpdate = useMemo(
-    () => throttle(handleDataUpdate, 50),
-    [handleDataUpdate]
-  );
-
   useEffect(() => {
     if (!isChartInitialized) {
       const colors = getThemeColors();
@@ -225,10 +212,10 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
     if (isChartInitialized) {
       const lines = String(data).split("\n");
       lines.forEach((line) => {
-        throttledHandleDataUpdate(line);
+        handleDataUpdate(line);
       });
     }
-  }, [data, isChartInitialized, throttledHandleDataUpdate, theme]);
+  }, [data, isChartInitialized, handleDataUpdate, theme]);
 
   useEffect(() => {
     if (isChartInitialized) {
