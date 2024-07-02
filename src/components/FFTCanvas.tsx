@@ -160,7 +160,7 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
 
     ctx.clearRect(0, 0, width, height);
 
-    const freqStep = samplingRate / (2 * fftSize);
+    const freqStep = samplingRate / fftSize;
     const displayPoints = Math.min(Math.ceil(maxFreq / freqStep), fftSize / 2);
 
     const xScale = (width - 90) / displayPoints;
