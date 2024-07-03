@@ -24,9 +24,9 @@ BioSignal Web Recorder is an application based on Web Serial connection, you can
 
 ## Compatible Browsers
 
-| Feature | Chrome | Edge | Firefox | Opera | Safari | Chrome Android | Firefox for Android | Samsung Internet | WebView Android |
-| ------- | ------ | ---- | ------- | ----- | ------ | -------------- | ------------------- | ---------------- | --------------- |
-| ✅      | ✅     | ✅   | ❌      | ✅    | ❌     | ❌             | ❌                  | ❌               | ❌              |
+| Feature | Chrome | Edge | Firefox | Opera | Safari |
+| ------- | ------ | ---- | ------- | ----- | ------ |
+| ✅      | ✅     | ✅   | ❌      | ✅    | ❌     |
 
 ## How to use
 
