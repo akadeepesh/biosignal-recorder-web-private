@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useTheme } from "next-themes";
+import BandPowerGraph from "./BandPowerGraph";
 
 interface FFTGraphProps {
   data: string;
@@ -243,9 +244,10 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
   }, [plotData]);
 
   return (
-    <div ref={containerRef} className="w-full  h-[400px] max-w-[700px]">
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
-    </div>
+    // <div ref={containerRef} className="w-full  h-[400px] max-w-[700px]">
+    //   <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
+    // </div>
+    <BandPowerGraph fftData={fftData} samplingRate={samplingRate} />
   );
 };
 

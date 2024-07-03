@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { useTheme } from "next-themes";
 
 interface BandPowerGraphProps {
@@ -12,44 +18,62 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [bandPowerData, setBandPowerData] = useState<number[]>(
+    Array(5).fill(0)
+  );
   const { theme } = useTheme();
 
-  const bands = useMemo(
+  const bandColors = useMemo(
+    () => ["red", "yellow", "green", "blue", "purple"],
+    []
+  );
+  const bandNames = useMemo(
+    () => ["DELTA", "THETA", "ALPHA", "BETA", "GAMMA"],
+    []
+  );
+  const bandRanges = useMemo(
     () => [
-      { name: "DELTA", range: [0.5, 4], color: "#FF6384" },
-      { name: "THETA", range: [4, 8], color: "#FFD166" },
-      { name: "ALPHA", range: [8, 13], color: "#06D6A0" },
-      { name: "BETA", range: [13, 32], color: "#4F8EFD" },
-      { name: "GAMMA", range: [32, 100], color: "#9966FF" },
+      [0.5, 4],
+      [4, 8],
+      [8, 13],
+      [13, 32],
+      [32, 100],
     ],
     []
   );
 
   const calculateBandPower = useCallback(
-    (channelData: number[]) => {
-      const fftSize = channelData.length * 2;
-      const freqResolution = samplingRate / fftSize;
-
-      return bands.map((band) => {
-        const startBin = Math.floor(band.range[0] / freqResolution);
-        const endBin = Math.min(
-          Math.floor(band.range[1] / freqResolution),
-          channelData.length - 1
+    (fftChannelData: number[]) => {
+      const freqResolution = samplingRate / (fftChannelData.length * 2);
+      return bandRanges.map(([low, high], index) => {
+        const startIndex = Math.max(1, Math.floor(low / freqResolution));
+        const endIndex = Math.min(
+          Math.ceil(high / freqResolution),
+          fftChannelData.length
         );
-        let power = 0;
-        for (let i = startBin; i <= endBin; i++) {
-          power += channelData[i] ** 2;
-        }
-        return power;
+        if (startIndex >= endIndex) return 0;
+        const bandPower = fftChannelData
+          .slice(startIndex, endIndex)
+          .reduce((sum, val) => sum + val * val, 0);
+        const powerDensity =
+          (bandPower / (endIndex - startIndex)) * (1e6 / freqResolution);
+        return powerDensity;
       });
     },
-    [bands, samplingRate]
+    [bandRanges, samplingRate]
   );
+  useEffect(() => {
+    if (fftData.length > 0 && fftData[0].length > 0) {
+      const channelData = fftData[0]; // Use the first channel
+      const newBandPowerData = calculateBandPower(channelData);
+      setBandPowerData(newBandPowerData);
+    }
+  }, [fftData, calculateBandPower]);
 
   const drawGraph = useCallback(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
-    if (!canvas || !container || fftData.length === 0) return;
+    if (!canvas || !container) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -62,13 +86,14 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
     ctx.clearRect(0, 0, width, height);
 
-    const axisColor = theme === "dark" ? "white" : "black";
-    const barWidth = (width - 100) / bands.length;
-    const spacing = 10;
+    const barWidth = (width - 100) / (bandNames.length + 1);
+    const maxPower = Math.max(...bandPowerData);
+    const minPower = Math.max(
+      0.01,
+      Math.min(...bandPowerData.filter((p) => p > 0))
+    );
 
-    const bandPowers = calculateBandPower(fftData[0]); // Using the first channel
-    const minPower = Math.max(1e-9, Math.min(...bandPowers));
-    const maxPower = Math.max(...bandPowers);
+    const axisColor = theme === "dark" ? "white" : "black";
 
     // Draw axes
     ctx.beginPath();
@@ -79,56 +104,54 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
     ctx.stroke();
 
     // Draw bars
-    bandPowers.forEach((power, index) => {
-      const x = 50 + index * (barWidth + spacing);
-      const logPower = Math.log10(power);
+    bandPowerData.forEach((power, index) => {
+      const x = 50 + (index + 1) * barWidth;
+      const logPower = Math.log10(Math.max(power, minPower));
       const logMinPower = Math.log10(minPower);
       const logMaxPower = Math.log10(maxPower);
       const barHeight =
         ((logPower - logMinPower) / (logMaxPower - logMinPower)) *
         (height - 60);
-      ctx.fillStyle = bands[index].color;
-      ctx.fillRect(x, height - 50 - barHeight, barWidth, barHeight);
+      ctx.fillStyle = bandColors[index];
+      ctx.fillRect(x, height - 50 - barHeight, barWidth * 0.8, barHeight);
     });
 
     // Draw labels
     ctx.fillStyle = axisColor;
     ctx.font = "12px Arial";
 
-    // Y-axis labels (logarithmic scale)
-    for (
-      let i = Math.floor(Math.log10(minPower));
-      i <= Math.ceil(Math.log10(maxPower));
-      i++
-    ) {
-      const value = Math.pow(10, i);
-      const labelY =
-        height -
-        50 -
-        ((Math.log10(value) - Math.log10(minPower)) /
-          (Math.log10(maxPower) - Math.log10(minPower))) *
-          (height - 60);
-      ctx.fillText(value.toExponential(0), 5, labelY);
-    }
+    // Y-axis labels (log scale)
+    const yLabels = [0.01, 0.1, 1, 10, 100];
+    yLabels.forEach((value) => {
+      if (value >= minPower && value <= maxPower) {
+        const logValue = Math.log10(value);
+        const labelY =
+          height -
+          50 -
+          ((logValue - Math.log10(minPower)) /
+            (Math.log10(maxPower) - Math.log10(minPower))) *
+            (height - 60);
+        ctx.fillText(value.toString(), 5, labelY);
+      }
+    });
 
     // X-axis labels
-    bands.forEach((band, index) => {
-      const labelX = 50 + index * (barWidth + spacing) + barWidth / 2;
-      ctx.fillText(band.name, labelX, height - 30);
+    bandNames.forEach((band, index) => {
+      const labelX = 50 + (index + 1) * barWidth;
+      ctx.fillText(band, labelX, height - 30);
     });
 
     ctx.font = "14px Arial";
     ctx.fillText("EEG Power Bands", width / 2, height - 10);
     ctx.save();
-    ctx.translate(15, height / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Power - (uV)^2 / Hz", 0, 0);
+    ctx.fillText("Power — μV² / Hz", -height / 2, 20);
     ctx.restore();
-  }, [bands, fftData, theme, calculateBandPower]);
+  }, [bandPowerData, theme, bandColors, bandNames]);
 
   useEffect(() => {
     drawGraph();
-  }, [fftData, theme, drawGraph]);
+  }, [bandPowerData, theme, drawGraph]);
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {

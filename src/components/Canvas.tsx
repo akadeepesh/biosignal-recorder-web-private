@@ -160,6 +160,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
               responsive: true,
               millisPerPixel: 12,
               interpolation: "bezier",
+              // limitFPS: 30, // Limit the frame rate for performance
               grid: {
                 fillStyle: colors.background,
                 strokeStyle: colors.grid,
