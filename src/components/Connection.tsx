@@ -145,6 +145,7 @@ const Connection: React.FC<ConnectionProps> = ({
       const reader = port.readable?.getReader();
       readerRef.current = reader;
       readData();
+      const wakeLock = await navigator.wakeLock.request("screen");
     } catch (error) {
       disconnectDevice();
       isConnectedRef.current = false;
