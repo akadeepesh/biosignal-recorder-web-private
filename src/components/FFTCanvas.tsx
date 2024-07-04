@@ -244,10 +244,15 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
   }, [plotData]);
 
   return (
-    // <div ref={containerRef} className="w-full  h-[400px] max-w-[700px]">
-    //   <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
-    // </div>
-    <BandPowerGraph fftData={fftData} samplingRate={samplingRate} />
+    <div className="flex flex-col gap-2 w-full h-full">
+      <div
+        ref={containerRef}
+        className="w-full flex flex-col  h-[300px] max-w-[700px]"
+      >
+        <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
+      </div>
+      <BandPowerGraph fftData={fftData} samplingRate={samplingRate} />
+    </div>
   );
 };
 

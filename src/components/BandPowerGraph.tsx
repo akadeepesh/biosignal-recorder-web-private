@@ -98,7 +98,7 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
       ctx.clearRect(0, 0, width, height);
 
-      const barWidth = (width - 100) / (bandNames.length + 1);
+      const barWidth = (width - 70) / bandNames.length; // Reduced left margin
       const minPower = Math.min(...currentBandPowerData);
       const maxPower = Math.max(...currentBandPowerData);
 
@@ -106,15 +106,15 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
       // Draw axes
       ctx.beginPath();
-      ctx.moveTo(50, 10);
-      ctx.lineTo(50, height - 50);
+      ctx.moveTo(70, 10); // Moved x-axis start point
+      ctx.lineTo(70, height - 50);
       ctx.lineTo(width - 20, height - 50);
       ctx.strokeStyle = axisColor;
       ctx.stroke();
 
       // Draw bars
       currentBandPowerData.forEach((power, index) => {
-        const x = 50 + (index + 1) * barWidth;
+        const x = 70 + index * barWidth; // Adjusted x position
         const normalizedHeight = (power - minPower) / (maxPower - minPower);
         const barHeight = normalizedHeight * (height - 60);
         ctx.fillStyle = bandColors[index];
@@ -132,22 +132,24 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
       for (let i = 0; i <= yLabelCount; i++) {
         const value = minPower + (maxPower - minPower) * (i / yLabelCount);
         const labelY = height - 50 - (i / yLabelCount) * (height - 60);
-        ctx.fillText(value.toFixed(1) + " dB", 45, labelY);
+        ctx.fillText(value.toFixed(1) + " dB", 65, labelY);
       }
 
       // X-axis labels
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
       bandNames.forEach((band, index) => {
-        const labelX = 50 + (index + 1) * barWidth + barWidth * 0.4;
-        ctx.fillText(band, labelX, height - 25);
+        const labelX = 70 + index * barWidth + barWidth * 0.4;
+        ctx.fillText(band, labelX, height - 35);
       });
 
       ctx.font = "14px Arial";
-      ctx.fillText("EEG Power Bands", width / 2, height - 10);
+      ctx.fillText("EEG Power Bands", width / 2, height - 15);
+
+      // Rotate and position the y-axis label
       ctx.save();
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText("Power — μV² / Hz", -height / 2, 20);
+      ctx.fillText("Power — μV² / Hz", -height / 2, 0); // Moved the text to the left
       ctx.restore();
     },
     [theme, bandColors, bandNames]
@@ -195,7 +197,7 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
   }, [animateGraph]);
 
   return (
-    <div ref={containerRef} className="w-full h-[400px] max-w-[700px]">
+    <div ref={containerRef} className="w-full h-[300px] max-w-[700px]">
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
     </div>
   );

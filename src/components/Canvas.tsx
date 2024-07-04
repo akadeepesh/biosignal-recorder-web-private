@@ -288,13 +288,8 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
           return null;
         })}
       </div>
-      <div className="w-1/3">
-        <div className="flex flex-col h-full justify-center items-center">
-          <div className="flex h-1/2">
-            <FFTCanvas data={data} maxFreq={100} />
-          </div>
-          {/* <div className="flex h-1/2">Hello world</div> */}
-        </div>
+      <div className="flex justify-center items-center w-1/3">
+        <FFTCanvas data={data} maxFreq={100} />
       </div>
     </div>
   );
