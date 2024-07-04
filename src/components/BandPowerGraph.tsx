@@ -98,7 +98,7 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
       ctx.clearRect(0, 0, width, height);
 
-      const barWidth = (width - 70) / bandNames.length; // Reduced left margin
+      const barWidth = (width - 70) / bandNames.length;
       const minPower = Math.min(...currentBandPowerData);
       const maxPower = Math.max(...currentBandPowerData);
 
@@ -106,7 +106,7 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
       // Draw axes
       ctx.beginPath();
-      ctx.moveTo(70, 10); // Moved x-axis start point
+      ctx.moveTo(70, 10);
       ctx.lineTo(70, height - 50);
       ctx.lineTo(width - 20, height - 50);
       ctx.strokeStyle = axisColor;
@@ -149,7 +149,7 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
       // Rotate and position the y-axis label
       ctx.save();
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText("Power — μV² / Hz", -height / 2, 0); // Moved the text to the left
+      ctx.fillText("Power — dB", -height / 2 + 15, 0);
       ctx.restore();
     },
     [theme, bandColors, bandNames]
