@@ -24,6 +24,13 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
 
   const channelColors = useMemo(() => ["red", "green", "blue", "purple"], []);
 
+  const toDecibels = (
+    magnitude: number,
+    referenceAmplitude: number = 1
+  ): number => {
+    return 20 * Math.log10(magnitude / referenceAmplitude);
+  };
+
   const fft = useCallback((signal: number[]): { re: number; im: number }[] => {
     const n = signal.length;
     if (n <= 1) return signal.map((x) => ({ re: x, im: 0 }));
@@ -128,7 +135,6 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
         if (line.trim() !== "") {
           const values = line.split(",").map(Number);
           if (values.length >= 5) {
-            // Ensure we have at least 4 channels plus the counter
             for (let i = 0; i < 4; i++) {
               let sensorValue = values[i + 1];
               if (!isNaN(sensorValue)) {
@@ -140,7 +146,10 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
                   let fftResult = fft(windowedBuffer);
                   const newFftData = fftResult
                     .slice(0, fftSize / 2)
-                    .map((c) => Math.sqrt(c.re * c.re + c.im * c.im));
+                    .map((c) => {
+                      const magnitude = Math.sqrt(c.re * c.re + c.im * c.im);
+                      return toDecibels(magnitude);
+                    });
                   setFftData((prevData) => {
                     const newData = [...prevData];
                     newData[i] = newFftData;
@@ -180,10 +189,17 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     const displayPoints = Math.min(Math.ceil(maxFreq / freqStep), fftSize / 2);
 
     const xScale = (width - leftMargin - 10) / displayPoints;
+    // const yMax = Math.max(
+    //   ...fftData.flatMap((channel) => channel.slice(0, displayPoints))
+    // );
+    // const yScale = yMax > 0 ? (height - bottomMargin - 10) / yMax : 1;
+
+    const yMin = 0; // Minimum dB value to display
     const yMax = Math.max(
+      0,
       ...fftData.flatMap((channel) => channel.slice(0, displayPoints))
     );
-    const yScale = yMax > 0 ? (height - bottomMargin - 10) / yMax : 1;
+    const yScale = (height - bottomMargin - 10) / (yMax - yMin);
 
     const axisColor = theme === "dark" ? "white" : "black";
 
@@ -201,7 +217,7 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
       ctx.strokeStyle = channelColors[index];
       for (let i = 0; i < displayPoints; i++) {
         const x = leftMargin + i * xScale;
-        const y = height - bottomMargin - (channelData[i] || 0) * yScale;
+        const y = height - bottomMargin - (channelData[i] - yMin) * yScale;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -215,14 +231,14 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     // Y-axis labels
     const yLabelCount = 5;
     for (let i = 0; i <= yLabelCount; i++) {
-      const value = (yMax * i) / yLabelCount;
+      const value = yMin + ((yMax - yMin) * i) / yLabelCount;
       const labelY =
         height -
         bottomMargin -
-        (i / yLabelCount) * (height - bottomMargin - 10);
+        ((value - yMin) / (yMax - yMin)) * (height - bottomMargin - 10);
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
-      ctx.fillText(value.toFixed(1), leftMargin - 5, labelY);
+      ctx.fillText(value.toFixed(0) + " dB", leftMargin - 5, labelY);
     }
 
     // X-axis labels
@@ -243,7 +259,7 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     ctx.save();
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = "center";
-    ctx.fillText("Amplitude", -height / 2, 15);
+    ctx.fillText("Amplitude (dB)", -height / 2, 15);
     ctx.restore();
   }, [fftData, theme, maxFreq, samplingRate, fftSize, channelColors]);
 
