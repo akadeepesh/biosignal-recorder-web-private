@@ -84,7 +84,6 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
       // If transitioning from all zeros to some non-zero values, or vice versa
       if (currentIsAllZeros !== isAllZeros || !isAllZeros) {
         const newBandPowerData = calculateBandPower(channelData);
-        console.log("New band power data:", newBandPowerData);
         setBandPowerData(newBandPowerData);
         prevBandPowerData.current = newBandPowerData; // Initialize prevBandPowerData
         setIsAllZeros(currentIsAllZeros);
