@@ -301,7 +301,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
         })}
       </div>
       <div className="flex justify-center items-center w-1/3">
-        <FFTCanvas data={data} maxFreq={100} />
+        <FFTCanvas data={data} maxFreq={60} />
       </div>
     </div>
   );
