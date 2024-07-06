@@ -189,12 +189,15 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     const displayPoints = Math.min(Math.ceil(maxFreq / freqStep), fftSize / 2);
 
     const xScale = (width - leftMargin - 10) / displayPoints;
-    // const yMax = Math.max(
-    //   ...fftData.flatMap((channel) => channel.slice(0, displayPoints))
-    // );
-    // const yScale = yMax > 0 ? (height - bottomMargin - 10) / yMax : 1;
 
-    const yMin = 0; // Minimum dB value to display
+    // Find the minimum value in the data, but cap it at -20 dB
+    const yMin = Math.max(
+      -20,
+      Math.min(
+        0,
+        ...fftData.flatMap((channel) => channel.slice(0, displayPoints))
+      )
+    );
     const yMax = Math.max(
       0,
       ...fftData.flatMap((channel) => channel.slice(0, displayPoints))
@@ -217,7 +220,13 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
       ctx.strokeStyle = channelColors[index];
       for (let i = 0; i < displayPoints; i++) {
         const x = leftMargin + i * xScale;
-        const y = height - bottomMargin - (channelData[i] - yMin) * yScale;
+        const y = Math.max(
+          10,
+          Math.min(
+            height - bottomMargin,
+            height - bottomMargin - (channelData[i] - yMin) * yScale
+          )
+        );
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }

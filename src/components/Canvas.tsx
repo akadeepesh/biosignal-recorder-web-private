@@ -164,7 +164,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
           if (canvas) {
             const chart = new SmoothieChart({
               responsive: true,
-              millisPerPixel: 12,
+              millisPerPixel: 8,
               interpolation: "bezier",
               // limitFPS: 30, // Limit the frame rate for performance
               grid: {
