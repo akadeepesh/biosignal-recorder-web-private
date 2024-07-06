@@ -18,7 +18,6 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isAllZeros, setIsAllZeros] = useState(true);
   const [bandPowerData, setBandPowerData] = useState<number[]>(
     Array(5).fill(0)
   );
@@ -76,20 +75,12 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
   useEffect(() => {
     if (fftData.length > 0 && fftData[0].length > 0) {
-      const channelData = fftData[0]; // Use the first channel
+      const channelData = fftData[0];
 
-      // Check if the data is all zeros
-      const currentIsAllZeros = channelData.every((val) => val === 0);
-
-      // If transitioning from all zeros to some non-zero values, or vice versa
-      if (currentIsAllZeros !== isAllZeros || !isAllZeros) {
-        const newBandPowerData = calculateBandPower(channelData);
-        setBandPowerData(newBandPowerData);
-        prevBandPowerData.current = newBandPowerData; // Initialize prevBandPowerData
-        setIsAllZeros(currentIsAllZeros);
-      }
+      const newBandPowerData = calculateBandPower(channelData);
+      setBandPowerData(newBandPowerData);
     }
-  }, [fftData, calculateBandPower, isAllZeros]);
+  }, [fftData, calculateBandPower]);
 
   const drawGraph = useCallback(
     (currentBandPowerData: number[]) => {
@@ -171,20 +162,17 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
   );
 
   const animateGraph = useCallback(() => {
+    const interpolationFactor = 0.1; // Adjust this value for smoother or faster transitions
+
     const currentValues = bandPowerData.map((target, i) => {
-      const prev = prevBandPowerData.current[i] || 0; // Use 0 if prev is undefined
-      const diff = target - prev;
-      return isNaN(prev) || isNaN(diff) ? target : prev + diff * 0.1;
+      const prev = prevBandPowerData.current[i];
+      return prev + (target - prev) * interpolationFactor;
     });
 
     drawGraph(currentValues);
     prevBandPowerData.current = currentValues;
 
-    if (
-      currentValues.some((val, i) => Math.abs(val - bandPowerData[i]) > 0.01)
-    ) {
-      animationRef.current = requestAnimationFrame(animateGraph);
-    }
+    animationRef.current = requestAnimationFrame(animateGraph);
   }, [bandPowerData, drawGraph]);
 
   useEffect(() => {
