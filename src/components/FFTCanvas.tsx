@@ -31,6 +31,27 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
     return 20 * Math.log10(magnitude / referenceAmplitude);
   };
 
+  const removeDCComponent = (buffer: number[]): number[] => {
+    const mean = buffer.reduce((sum, val) => sum + val, 0) / buffer.length;
+    return buffer.map((val) => val - mean);
+  };
+
+  const applyHighPassFilter = (
+    buffer: number[],
+    cutoffFreq: number
+  ): number[] => {
+    const rc = 1 / (2 * Math.PI * cutoffFreq);
+    const dt = 1 / samplingRate;
+    const alpha = rc / (rc + dt);
+    let filteredBuffer = new Array(buffer.length);
+    filteredBuffer[0] = buffer[0];
+    for (let i = 1; i < buffer.length; i++) {
+      filteredBuffer[i] =
+        alpha * (filteredBuffer[i - 1] + buffer[i] - buffer[i - 1]);
+    }
+    return filteredBuffer;
+  };
+
   const fft = useCallback((signal: number[]): { re: number; im: number }[] => {
     const n = signal.length;
     if (n <= 1) return signal.map((x) => ({ re: x, im: 0 }));
@@ -140,9 +161,10 @@ const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
               if (!isNaN(sensorValue)) {
                 fftBufferRef.current[i].push(sensorValue);
                 if (fftBufferRef.current[i].length >= fftSize) {
-                  const windowedBuffer = applyHannWindow(
-                    fftBufferRef.current[i]
-                  );
+                  let processedBuffer = fftBufferRef.current[i];
+                  processedBuffer = removeDCComponent(processedBuffer);
+                  processedBuffer = applyHighPassFilter(processedBuffer, 0.5); // 0.5 Hz cutoff
+                  const windowedBuffer = applyHannWindow(processedBuffer);
                   let fftResult = fft(windowedBuffer);
                   const newFftData = fftResult
                     .slice(0, fftSize / 2)

@@ -47,30 +47,29 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
   const calculateBandPower = useCallback(
     (fftChannelData: number[]) => {
       const freqResolution = samplingRate / (fftChannelData.length * 2);
+
       return bandRanges.map(([low, high]) => {
         const startIndex = Math.max(1, Math.floor(low / freqResolution));
         const endIndex = Math.min(
           Math.ceil(high / freqResolution),
-          fftChannelData.length
+          fftChannelData.length - 1
         );
-        if (startIndex >= endIndex) return 0;
 
         let bandPower = 0;
-        for (let i = startIndex; i < endIndex; i++) {
-          if (!isNaN(fftChannelData[i])) {
-            bandPower += fftChannelData[i] * fftChannelData[i];
+        for (let i = startIndex; i <= endIndex; i++) {
+          if (!isNaN(fftChannelData[i]) && i < fftChannelData.length) {
+            // Convert dB back to linear scale for summation
+            bandPower += Math.pow(10, fftChannelData[i] / 10);
           }
         }
 
-        // Normalize by the width of the frequency band
-        const bandWidth = high - low;
-        const normalizedPower = bandPower / bandWidth;
+        // Normalize by the number of frequency bins in the band
+        const normalizedPower = bandPower / (endIndex - startIndex + 1);
 
-        // Convert to dB scale, handle zero or negative values
-        const powerDB =
-          normalizedPower > 0 ? 10 * Math.log10(normalizedPower) : -100;
+        // Convert back to dB
+        const powerDB = 10 * Math.log10(normalizedPower);
 
-        return isFinite(powerDB) ? powerDB : -100; // Return a very low dB value if powerDB is not finite
+        return powerDB;
       });
     },
     [bandRanges, samplingRate]
