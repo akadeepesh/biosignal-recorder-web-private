@@ -48,10 +48,6 @@ const Connection: React.FC<ConnectionProps> = ({
   const [buffer, setBuffer] = useState<string[][]>([]);
   const [datasets, setDatasets] = useState<string[][][]>([]);
 
-  const [missedDataCount, setMissedDataCount] = useState<number>(0);
-  const lastCounterRef = useRef<number>(-1);
-  const dataRateWindowRef = useRef<number[]>([]);
-
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
     ReadableStreamDefaultReader<Uint8Array> | null | undefined

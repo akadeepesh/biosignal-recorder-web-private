@@ -13,7 +13,7 @@ interface FFTGraphProps {
   maxFreq?: number;
 }
 
-const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 100 }) => {
+const FFTGraph: React.FC<FFTGraphProps> = ({ data, maxFreq = 60 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fftData, setFftData] = useState<number[][]>([[], [], [], []]);
