@@ -57,17 +57,20 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
 
         let bandPower = 0;
         for (let i = startIndex; i < endIndex; i++) {
-          bandPower += fftChannelData[i] * fftChannelData[i];
+          if (!isNaN(fftChannelData[i])) {
+            bandPower += fftChannelData[i] * fftChannelData[i];
+          }
         }
 
         // Normalize by the width of the frequency band
         const bandWidth = high - low;
         const normalizedPower = bandPower / bandWidth;
 
-        // Convert to dB scale
-        const powerDB = 10 * Math.log10(normalizedPower);
+        // Convert to dB scale, handle zero or negative values
+        const powerDB =
+          normalizedPower > 0 ? 10 * Math.log10(normalizedPower) : -100;
 
-        return powerDB;
+        return isFinite(powerDB) ? powerDB : -100; // Return a very low dB value if powerDB is not finite
       });
     },
     [bandRanges, samplingRate]
@@ -76,9 +79,14 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
   useEffect(() => {
     if (fftData.length > 0 && fftData[0].length > 0) {
       const channelData = fftData[0];
-
       const newBandPowerData = calculateBandPower(channelData);
-      setBandPowerData(newBandPowerData);
+
+      // Check if all values are NaN, if so, set to a default low value
+      if (newBandPowerData.every(isNaN)) {
+        setBandPowerData(Array(5).fill(-100));
+      } else {
+        setBandPowerData(newBandPowerData);
+      }
     }
   }, [fftData, calculateBandPower]);
 
@@ -105,8 +113,12 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
       ctx.clearRect(0, 0, width, height);
 
       const barWidth = (width - 70) / bandNames.length;
-      const minPower = Math.min(...currentBandPowerData);
-      const maxPower = Math.max(...currentBandPowerData);
+      let minPower = Math.min(...currentBandPowerData);
+      let maxPower = Math.max(...currentBandPowerData);
+
+      if (maxPower - minPower < 1) {
+        maxPower = minPower + 1;
+      }
 
       const axisColor = theme === "dark" ? "white" : "black";
 
