@@ -19,11 +19,12 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bandPowerData, setBandPowerData] = useState<number[]>(
-    Array(5).fill(0)
+    Array(5).fill(-100)
   );
   const prevBandPowerData = useRef<number[]>(Array(5).fill(0));
   const animationRef = useRef<number>();
   const { theme } = useTheme();
+  const [hasValidData, setHasValidData] = useState(false);
 
   const bandColors = useMemo(
     () => ["red", "yellow", "green", "blue", "purple"],
@@ -80,14 +81,16 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
       const channelData = fftData[0];
       const newBandPowerData = calculateBandPower(channelData);
 
-      // Check if all values are NaN, if so, set to a default low value
-      if (newBandPowerData.every(isNaN)) {
-        setBandPowerData(Array(5).fill(-100));
-      } else {
+      if (
+        newBandPowerData.some((value) => !isNaN(value) && value > -Infinity)
+      ) {
+        setHasValidData(true);
         setBandPowerData(newBandPowerData);
+      } else if (!hasValidData) {
+        setBandPowerData(Array(5).fill(-100));
       }
     }
-  }, [fftData, calculateBandPower]);
+  }, [fftData, calculateBandPower, hasValidData]);
 
   const drawGraph = useCallback(
     (currentBandPowerData: number[]) => {
@@ -173,7 +176,7 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
   );
 
   const animateGraph = useCallback(() => {
-    const interpolationFactor = 0.1; // Adjust this value for smoother or faster transitions
+    const interpolationFactor = 0.1;
 
     const currentValues = bandPowerData.map((target, i) => {
       const prev = prevBandPowerData.current[i];
