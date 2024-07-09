@@ -247,7 +247,7 @@ const Connection: React.FC<ConnectionProps> = ({
         <div className="mt-2 flex flex-col space-y-1">
           <p>Start Time: {startTimeString}</p>
           <p>End Time: {endTimeString}</p>
-          <p>RecordingDuration: {formattedDuration}</p>
+          <p>Recording Duration: {formattedDuration}</p>
           <p>Stored Recorded Files: {datasets.length + 1}</p>
         </div>
       ),

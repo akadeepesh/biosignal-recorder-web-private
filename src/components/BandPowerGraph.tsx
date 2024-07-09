@@ -59,15 +59,14 @@ const BandPowerGraph: React.FC<BandPowerGraphProps> = ({
         let bandPower = 0;
         for (let i = startIndex; i <= endIndex; i++) {
           if (!isNaN(fftChannelData[i]) && i < fftChannelData.length) {
-            // Convert dB back to linear scale for summation
-            bandPower += Math.pow(10, fftChannelData[i] / 10);
+            bandPower += Math.pow(fftChannelData[i], 2); // Use square of magnitude
           }
         }
 
         // Normalize by the number of frequency bins in the band
         const normalizedPower = bandPower / (endIndex - startIndex + 1);
 
-        // Convert back to dB
+        // Convert to dB
         const powerDB = 10 * Math.log10(normalizedPower);
 
         return powerDB;
