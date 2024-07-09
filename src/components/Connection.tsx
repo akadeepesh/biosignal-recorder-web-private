@@ -47,6 +47,10 @@ const Connection: React.FC<ConnectionProps> = ({
   const isRecordingRef = useRef<boolean>(false);
   const [buffer, setBuffer] = useState<string[][]>([]);
   const [datasets, setDatasets] = useState<string[][][]>([]);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [startTimeString, setStartTimeString] = useState<string>("");
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
@@ -189,7 +193,14 @@ const Connection: React.FC<ConnectionProps> = ({
       if (isRecording) {
         stopRecording();
       } else {
+        const now = new Date();
+        setStartTime(now.getTime());
+        setStartTimeString(now.toLocaleTimeString());
         setIsRecording(true);
+        setElapsedTime(0);
+        timerIntervalRef.current = setInterval(() => {
+          setElapsedTime((prev) => prev + 1);
+        }, 1000);
         isRecordingRef.current = true;
       }
     } else {
@@ -197,17 +208,65 @@ const Connection: React.FC<ConnectionProps> = ({
     }
   };
 
+  const formatDuration = (durationInSeconds: number): string => {
+    const minutes = Math.floor(durationInSeconds / 60);
+    const seconds = durationInSeconds % 60;
+    if (minutes === 0) {
+      return `${seconds} second${seconds !== 1 ? "s" : ""}`;
+    }
+    return `${minutes} minute${minutes !== 1 ? "s" : ""} ${seconds} second${
+      seconds !== 1 ? "s" : ""
+    }`;
+  };
+
   const stopRecording = () => {
+    if (startTime === null) {
+      toast("Error: Start time was not set properly.");
+      return;
+    }
+
     if (buffer.length > 0) {
       const data = buffer;
-      setDatasets((prevDatasets) => {
-        const newDatasets = [...prevDatasets, data];
-        return newDatasets;
-      });
+      setDatasets((prevDatasets) => [...prevDatasets, data]);
       setBuffer([]);
     }
+
+    const endTime = new Date();
+    const endTimeString = endTime.toLocaleTimeString();
+    const durationInSeconds = Math.round(
+      (endTime.getTime() - startTime) / 1000
+    );
+
     setIsRecording(false);
     isRecordingRef.current = false;
+
+    const formattedDuration = formatDuration(durationInSeconds);
+
+    toast("Recording completed Successfully", {
+      description: (
+        <div className="mt-2 flex flex-col space-y-1">
+          <p>Start Time: {startTimeString}</p>
+          <p>End Time: {endTimeString}</p>
+          <p>RecordingDuration: {formattedDuration}</p>
+          <p>Stored Recorded Files: {datasets.length + 1}</p>
+        </div>
+      ),
+    });
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    setStartTime(null);
+    setStartTimeString("");
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const saveData = async () => {
@@ -245,8 +304,15 @@ const Connection: React.FC<ConnectionProps> = ({
   };
 
   return (
-    <div className="flex h-14 justify-center items-center">
-      <div className="flex gap-4">
+    <div className="flex h-14 items-center justify-between px-4">
+      <div className="flex-1">
+        {isRecording && (
+          <span className="text-destructive font-bold">
+            Recording: {formatTime(elapsedTime)}
+          </span>
+        )}
+      </div>
+      <div className="flex gap-4 flex-1 justify-center">
         <Button className="bg-primary gap-2" onClick={handleClick}>
           {isConnected ? (
             <>
@@ -260,10 +326,7 @@ const Connection: React.FC<ConnectionProps> = ({
             </>
           )}
         </Button>
-        {/* <Button className="bg-primary" onClick={() => writeData("c")}>
-          Write
-        </Button> */}
-        {isConnected ? (
+        {isConnected && (
           <div className="">
             <Select
               onValueChange={(value) => handleBitSelection(value)}
@@ -280,8 +343,8 @@ const Connection: React.FC<ConnectionProps> = ({
               </SelectContent>
             </Select>
           </div>
-        ) : null}
-        {isConnected ? (
+        )}
+        {isConnected && (
           <TooltipProvider>
             <Tooltip>
               <Button onClick={handleRecord}>
@@ -294,9 +357,8 @@ const Connection: React.FC<ConnectionProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        ) : null}
-
-        {datasets.length > 0 ? (
+        )}
+        {datasets.length > 0 && (
           <TooltipProvider>
             <Tooltip>
               <Button onClick={saveData}>
@@ -320,8 +382,9 @@ const Connection: React.FC<ConnectionProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        ) : null}
+        )}
       </div>
+      <div className="flex-1"></div>
     </div>
   );
 };
