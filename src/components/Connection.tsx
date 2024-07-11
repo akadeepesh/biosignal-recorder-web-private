@@ -108,11 +108,14 @@ const Connection: React.FC<ConnectionProps> = ({
 
   useEffect(() => {
     if (isConnected && portRef.current?.getInfo()) {
-      toast(
-        `You are now Connected to ${formatPortInfo(
-          portRef.current?.getInfo()!
-        )}`
-      );
+      toast("Connection Successfull", {
+        description: (
+          <div className="mt-2 flex flex-col space-y-1">
+            <p>Device: {formatPortInfo(portRef.current?.getInfo()!)}</p>
+            <p>Baud Rate: 115200</p>
+          </div>
+        ),
+      });
     } else {
       toast("Disconnected from device");
     }
@@ -133,7 +136,7 @@ const Connection: React.FC<ConnectionProps> = ({
     const vendorName =
       vendorsList.find((d) => parseInt(d.field_vid) === info.usbVendorId)
         ?.name ?? "Unknown Vendor";
-    return `${vendorName} - Product ID: ${info.usbProductId}`;
+    return `${vendorName} | Product ID: ${info.usbProductId}`;
   }
 
   const connectToDevice = async () => {
