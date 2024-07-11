@@ -30,6 +30,7 @@ import {
 } from "./ui/select";
 import { BitSelection } from "./DataPass";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { Separator } from "./ui/separator";
 
 interface ConnectionProps {
   LineData: Function;
@@ -103,8 +104,6 @@ const Connection: React.FC<ConnectionProps> = ({
     }
     setCustomTime("");
   };
-
-  console.log("date: ", new Date());
 
   useEffect(() => {
     if (isConnected && portRef.current?.getInfo()) {
@@ -251,10 +250,6 @@ const Connection: React.FC<ConnectionProps> = ({
     }
 
     LineData(dataValues);
-    if (isRecordingRef.current) {
-      setBuffer((prevBuffer) => [...prevBuffer, dataValues]);
-    }
-
     if (missedDataCount > 0) {
       console.log(`Missed data events in the last second: ${missedDataCount}`);
       setMissedDataCount(0);
@@ -417,64 +412,70 @@ const Connection: React.FC<ConnectionProps> = ({
     <div className="flex h-14 items-center justify-between px-4">
       <div className="flex-1">
         {isRecording && (
-          <div className="flex justify-center items-center space-x-2 w-min">
-            <div className="font-medium p-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors bg-primary text-destructive hover:bg-primary/90">
+          <div className="flex justify-center items-center space-x-1 w-min">
+            <div className="font-medium p-2 w-16 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors bg-primary text-destructive hover:bg-primary/90">
               {formatTime(elapsedTime)}
             </div>
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <Button className="text-lg font-medium p-2" variant="outline">
-                  {endTimeRef.current === null ? (
-                    <Infinity className="h-4 w-4" />
-                  ) : (
-                    <div className="text-xs font-medium">
-                      {formatTime(endTimeRef.current)}
+            <Separator orientation="vertical" className="bg-primary h-9" />
+            <div className="">
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button
+                    className="text-lg w-16 h-9 font-medium p-2 border-primary"
+                    variant="outline"
+                  >
+                    {endTimeRef.current === null ? (
+                      <Infinity className="h-5 w-5 text-destructive" />
+                    ) : (
+                      <div className="text-sm text-destructive font-medium">
+                        {formatTime(endTimeRef.current)}
+                      </div>
+                    )}
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-64 p-4" side="right">
+                  <div className="flex flex-col space-y-4">
+                    <div className="text-sm font-medium">
+                      Set End Time (minutes)
                     </div>
-                  )}
-                </Button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-64 p-4" side="right">
-                <div className="flex flex-col space-y-4">
-                  <div className="text-sm font-medium">
-                    Set End Time (minutes)
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 10, 20, 30].map((time) => (
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 10, 20, 30].map((time) => (
+                        <Button
+                          key={time}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTimeSelection(time)}
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex space-x-2 items-center">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="Custom"
+                        value={customTime}
+                        onBlur={handleCustomTimeSet}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleCustomTimeSet()
+                        }
+                        onChange={handleCustomTimeChange}
+                        className="w-20"
+                      />
                       <Button
-                        key={time}
                         variant="outline"
                         size="sm"
-                        onClick={() => handleTimeSelection(time)}
+                        onClick={() => handleTimeSelection(null)}
                       >
-                        {time}
+                        <Infinity className="h-4 w-4" />
                       </Button>
-                    ))}
+                    </div>
                   </div>
-                  <div className="flex space-x-2 items-center">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="Custom"
-                      value={customTime}
-                      onBlur={handleCustomTimeSet}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && handleCustomTimeSet()
-                      }
-                      onChange={handleCustomTimeChange}
-                      className="w-20"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTimeSelection(null)}
-                    >
-                      <Infinity className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
           </div>
         )}
       </div>
