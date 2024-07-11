@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import {
   Cable,
   Circle,
@@ -8,6 +9,7 @@ import {
   CircleX,
   FileArchive,
   FileDown,
+  Infinity,
 } from "lucide-react";
 import { vendorsList } from "./vendors";
 import { toast } from "sonner";
@@ -27,6 +29,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { BitSelection } from "./DataPass";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 interface ConnectionProps {
   LineData: Function;
@@ -51,6 +54,14 @@ const Connection: React.FC<ConnectionProps> = ({
   const [startTimeString, setStartTimeString] = useState<string>("");
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [endTime, setEndTime] = useState<number | null>(null);
+  const [customTime, setCustomTime] = useState<string>("");
+  const endTimeRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  const [missedDataCount, setMissedDataCount] = useState<number>(0);
+  const lastCounterRef = useRef<number>(-1);
+  const dataRateWindowRef = useRef<number[]>([]);
 
   const portRef = useRef<SerialPort | null>(null);
   const readerRef = useRef<
@@ -60,6 +71,40 @@ const Connection: React.FC<ConnectionProps> = ({
   const handleBitSelection = (value: string) => {
     setSelectedBits(value as BitSelection);
   };
+
+  const handleTimeSelection = (minutes: number | null) => {
+    if (minutes === null) {
+      setEndTime(null);
+      endTimeRef.current = null;
+      toast("Recording set to no time limit");
+    } else {
+      const newEndTimeSeconds = minutes * 60;
+      if (newEndTimeSeconds <= elapsedTime) {
+        toast("End time must be greater than the current elapsed time");
+      } else {
+        setEndTime(newEndTimeSeconds);
+        endTimeRef.current = newEndTimeSeconds;
+        toast(`Recording end time set to ${minutes} minutes`);
+      }
+    }
+  };
+
+  const handleCustomTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, "");
+    setCustomTime(value);
+  };
+
+  const handleCustomTimeSet = () => {
+    const time = parseInt(customTime);
+    if (!isNaN(time) && time > 0) {
+      handleTimeSelection(time);
+    } else {
+      toast("Please enter a valid time in minutes");
+    }
+    setCustomTime("");
+  };
+
+  console.log("date: ", new Date());
 
   useEffect(() => {
     if (isConnected && portRef.current?.getInfo()) {
@@ -152,9 +197,10 @@ const Connection: React.FC<ConnectionProps> = ({
         for (const line of lines) {
           const dataValues = line.split(",");
           if (dataValues.length === 1) {
-            toast(`Received Data: ${line}`);
+            // toast(`Received Data: ${line}`);
           } else {
-            LineData(dataValues);
+            // LineData(dataValues);
+            processData(dataValues);
             if (isRecordingRef.current) {
               setBuffer((prevBuffer) => {
                 const newBuffer = [...prevBuffer, dataValues];
@@ -169,6 +215,47 @@ const Connection: React.FC<ConnectionProps> = ({
       }
     }
     await disconnectDevice();
+  };
+
+  const processData = (dataValues: string[]) => {
+    const now = Date.now();
+    const [counter, ...sensorValues] = dataValues.map(Number);
+
+    // Sequence number analysis
+    if (
+      lastCounterRef.current !== -1 &&
+      counter !== (lastCounterRef.current + 1) % 256
+    ) {
+      console.log(
+        `Non-sequential counter: expected ${
+          (lastCounterRef.current + 1) % 256
+        }, got ${counter}`
+      );
+      setMissedDataCount((prev) => prev + 1);
+    }
+    lastCounterRef.current = counter;
+
+    // Data rate monitoring
+    dataRateWindowRef.current.push(now);
+    if (dataRateWindowRef.current.length > 250) {
+      const oldestTimestamp = dataRateWindowRef.current.shift()!;
+      const dataRate = 250000 / (now - oldestTimestamp);
+      if (dataRate < 248) {
+        // Allow for small fluctuations
+        console.log(`Data rate too low: ${dataRate.toFixed(2)} samples/second`);
+        setMissedDataCount((prev) => prev + 1);
+      }
+    }
+
+    LineData(dataValues);
+    if (isRecordingRef.current) {
+      setBuffer((prevBuffer) => [...prevBuffer, dataValues]);
+    }
+
+    if (missedDataCount > 0) {
+      console.log(`Missed data events in the last second: ${missedDataCount}`);
+      setMissedDataCount(0);
+    }
   };
 
   const columnNames = [
@@ -194,12 +281,24 @@ const Connection: React.FC<ConnectionProps> = ({
         stopRecording();
       } else {
         const now = new Date();
-        setStartTime(now.getTime());
+        const nowTime = now.getTime();
+        setStartTime(nowTime);
+        startTimeRef.current = nowTime;
         setStartTimeString(now.toLocaleTimeString());
         setIsRecording(true);
         setElapsedTime(0);
         timerIntervalRef.current = setInterval(() => {
-          setElapsedTime((prev) => prev + 1);
+          setElapsedTime((prev) => {
+            const newElapsedTime = prev + 1;
+            if (
+              endTimeRef.current !== null &&
+              newElapsedTime >= endTimeRef.current
+            ) {
+              stopRecording();
+              return endTimeRef.current;
+            }
+            return newElapsedTime;
+          });
         }, 1000);
         isRecordingRef.current = true;
       }
@@ -220,45 +319,53 @@ const Connection: React.FC<ConnectionProps> = ({
   };
 
   const stopRecording = () => {
-    if (startTime === null) {
-      toast("Error: Start time was not set properly.");
-      return;
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
     }
 
-    if (buffer.length > 0) {
-      const data = buffer;
-      setDatasets((prevDatasets) => [...prevDatasets, data]);
-      setBuffer([]);
+    if (startTimeRef.current === null) {
+      toast("Error: Start time was not set properly.");
+      return;
     }
 
     const endTime = new Date();
     const endTimeString = endTime.toLocaleTimeString();
     const durationInSeconds = Math.round(
-      (endTime.getTime() - startTime) / 1000
+      (endTime.getTime() - startTimeRef.current) / 1000
     );
 
-    setIsRecording(false);
-    isRecordingRef.current = false;
+    if (buffer.length > 0) {
+      const data = buffer;
+      setDatasets((prevDatasets) => {
+        const newDatasets = [...prevDatasets, data];
+        return newDatasets;
+      });
 
-    const formattedDuration = formatDuration(durationInSeconds);
+      setBuffer([]);
+    }
 
     toast("Recording completed Successfully", {
       description: (
         <div className="mt-2 flex flex-col space-y-1">
           <p>Start Time: {startTimeString}</p>
           <p>End Time: {endTimeString}</p>
-          <p>Recording Duration: {formattedDuration}</p>
+          <p>Recording Duration: {formatDuration(durationInSeconds)}</p>
           <p>Stored Recorded Files: {datasets.length + 1}</p>
+          {/* + 1 because not instant updation happens */}
         </div>
       ),
     });
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
+
+    setIsRecording(false);
+    isRecordingRef.current = false;
 
     setStartTime(null);
+    startTimeRef.current = null;
     setStartTimeString("");
+    setEndTime(null);
+    endTimeRef.current = null;
+    setElapsedTime(0);
   };
 
   const formatTime = (seconds: number): string => {
@@ -307,9 +414,65 @@ const Connection: React.FC<ConnectionProps> = ({
     <div className="flex h-14 items-center justify-between px-4">
       <div className="flex-1">
         {isRecording && (
-          <span className="text-destructive font-bold">
-            Recording: {formatTime(elapsedTime)}
-          </span>
+          <div className="flex justify-center items-center space-x-2 w-min">
+            <div className="font-medium p-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors bg-primary text-destructive hover:bg-primary/90">
+              {formatTime(elapsedTime)}
+            </div>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <Button className="text-lg font-medium p-2" variant="outline">
+                  {endTimeRef.current === null ? (
+                    <Infinity className="h-4 w-4" />
+                  ) : (
+                    <div className="text-xs font-medium">
+                      {formatTime(endTimeRef.current)}
+                    </div>
+                  )}
+                </Button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-64 p-4" side="right">
+                <div className="flex flex-col space-y-4">
+                  <div className="text-sm font-medium">
+                    Set End Time (minutes)
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1, 10, 20, 30].map((time) => (
+                      <Button
+                        key={time}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTimeSelection(time)}
+                      >
+                        {time}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex space-x-2 items-center">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="Custom"
+                      value={customTime}
+                      onBlur={handleCustomTimeSet}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleCustomTimeSet()
+                      }
+                      onChange={handleCustomTimeChange}
+                      className="w-20"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTimeSelection(null)}
+                    >
+                      <Infinity className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          </div>
         )}
       </div>
       <div className="flex gap-4 flex-1 justify-center">
