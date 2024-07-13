@@ -32,7 +32,6 @@ import {
 import { BitSelection } from "./DataPass";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { Separator } from "./ui/separator";
-import { set } from "lodash";
 
 interface ConnectionProps {
   LineData: Function;
@@ -120,7 +119,7 @@ const Connection: React.FC<ConnectionProps> = ({
       );
       if (board) {
         setSelectedBits(board.bits as BitSelection);
-        return `${board.name} | Product ID: ${info.usbProductId} | Bits: ${board.bits}`;
+        return `${board.name} | Product ID: ${info.usbProductId}`;
       }
 
       // If not found in BoardsList, fall back to the vendor check
@@ -171,7 +170,6 @@ const Connection: React.FC<ConnectionProps> = ({
       disconnectDevice();
       isConnectedRef.current = false;
       setIsConnected(false);
-      portRef.current = null;
       console.error("Error connecting to device:", error);
     }
   };
@@ -183,6 +181,8 @@ const Connection: React.FC<ConnectionProps> = ({
           await readerRef.current.cancel();
           readerRef.current.releaseLock();
         }
+        await portRef.current.close();
+        portRef.current = null;
       }
     } catch (error) {
       console.error("Error during disconnection:", error);
