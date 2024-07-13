@@ -142,7 +142,7 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
   );
 
   const throttledHandleDataUpdate = useMemo(
-    () => throttle(handleDataUpdate, 15),
+    () => throttle(handleDataUpdate, 0),
     [handleDataUpdate]
   );
 

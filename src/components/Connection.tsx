@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -12,6 +12,7 @@ import {
   Infinity,
 } from "lucide-react";
 import { vendorsList } from "./vendors";
+import { BoardsList } from "./UDL_Boards";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -31,6 +32,7 @@ import {
 import { BitSelection } from "./DataPass";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { Separator } from "./ui/separator";
+import { set } from "lodash";
 
 interface ConnectionProps {
   LineData: Function;
@@ -59,6 +61,7 @@ const Connection: React.FC<ConnectionProps> = ({
   const [customTime, setCustomTime] = useState<string>("");
   const endTimeRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const bufferRef = useRef<string[][]>([]);
 
   const [missedDataCount, setMissedDataCount] = useState<number>(0);
   const lastCounterRef = useRef<number>(-1);
@@ -105,12 +108,36 @@ const Connection: React.FC<ConnectionProps> = ({
     setCustomTime("");
   };
 
+  const formatPortInfo = useCallback(
+    (info: SerialPortInfo) => {
+      if (!info || !info.usbVendorId) {
+        return "Port with no info";
+      }
+
+      // First, check if the board exists in BoardsList
+      const board = BoardsList.find(
+        (b) => parseInt(b.field_pid) === info.usbProductId
+      );
+      if (board) {
+        setSelectedBits(board.bits as BitSelection);
+        return `${board.name} | Product ID: ${info.usbProductId} | Bits: ${board.bits}`;
+      }
+
+      // If not found in BoardsList, fall back to the vendor check
+      const vendorName =
+        vendorsList.find((d) => parseInt(d.field_vid) === info.usbVendorId)
+          ?.name ?? "Unknown Vendor";
+      return `${vendorName} | Product ID: ${info.usbProductId}`;
+    },
+    [setSelectedBits]
+  );
+
   useEffect(() => {
     if (isConnected && portRef.current?.getInfo()) {
       toast("Connection Successfull", {
         description: (
           <div className="mt-2 flex flex-col space-y-1">
-            <p>Device: {formatPortInfo(portRef.current?.getInfo()!)}</p>
+            <p>Device: {formatPortInfo(portRef.current.getInfo())}</p>
             <p>Baud Rate: 115200</p>
           </div>
         ),
@@ -118,7 +145,7 @@ const Connection: React.FC<ConnectionProps> = ({
     } else {
       toast("Disconnected from device");
     }
-  }, [isConnected]);
+  }, [isConnected, formatPortInfo]);
 
   const handleClick = () => {
     if (isConnected) {
@@ -127,16 +154,6 @@ const Connection: React.FC<ConnectionProps> = ({
       connectToDevice();
     }
   };
-
-  function formatPortInfo(info: SerialPortInfo) {
-    if (!info || !info.usbVendorId) {
-      return "Port with no info";
-    }
-    const vendorName =
-      vendorsList.find((d) => parseInt(d.field_vid) === info.usbVendorId)
-        ?.name ?? "Unknown Vendor";
-    return `${vendorName} | Product ID: ${info.usbProductId}`;
-  }
 
   const connectToDevice = async () => {
     try {
@@ -149,7 +166,7 @@ const Connection: React.FC<ConnectionProps> = ({
       const reader = port.readable?.getReader();
       readerRef.current = reader;
       readData();
-      const wakeLock = await navigator.wakeLock.request("screen");
+      await navigator.wakeLock.request("screen");
     } catch (error) {
       disconnectDevice();
       isConnectedRef.current = false;
@@ -161,14 +178,11 @@ const Connection: React.FC<ConnectionProps> = ({
 
   const disconnectDevice = async () => {
     try {
-      if (readerRef.current) {
-        await readerRef.current.cancel();
-        readerRef.current.releaseLock();
-        readerRef.current = null;
-      }
-      if (portRef.current) {
-        await portRef.current.close();
-        portRef.current = null;
+      if (portRef.current && portRef.current.readable) {
+        if (readerRef.current) {
+          await readerRef.current.cancel();
+          readerRef.current.releaseLock();
+        }
       }
     } catch (error) {
       console.error("Error during disconnection:", error);
@@ -204,6 +218,7 @@ const Connection: React.FC<ConnectionProps> = ({
             // LineData(dataValues);
             processData(dataValues);
             if (isRecordingRef.current) {
+              bufferRef.current.push(dataValues);
               setBuffer((prevBuffer) => {
                 const newBuffer = [...prevBuffer, dataValues];
                 return newBuffer;
@@ -278,31 +293,30 @@ const Connection: React.FC<ConnectionProps> = ({
       if (isRecording) {
         stopRecording();
       } else {
+        setIsRecording(true);
+        isRecordingRef.current = true;
         const now = new Date();
         const nowTime = now.getTime();
         setStartTime(nowTime);
         startTimeRef.current = nowTime;
         setStartTimeString(now.toLocaleTimeString());
-        setIsRecording(true);
         setElapsedTime(0);
-        timerIntervalRef.current = setInterval(() => {
-          setElapsedTime((prev) => {
-            const newElapsedTime = prev + 1;
-            if (
-              endTimeRef.current !== null &&
-              newElapsedTime >= endTimeRef.current
-            ) {
-              stopRecording();
-              return endTimeRef.current;
-            }
-            return newElapsedTime;
-          });
-        }, 1000);
-        isRecordingRef.current = true;
+        timerIntervalRef.current = setInterval(checkRecordingTime, 1000);
       }
     } else {
       toast("No device is connected");
     }
+  };
+
+  const checkRecordingTime = () => {
+    setElapsedTime((prev) => {
+      const newElapsedTime = prev + 1;
+      if (endTimeRef.current !== null && newElapsedTime >= endTimeRef.current) {
+        stopRecording();
+        return endTimeRef.current;
+      }
+      return newElapsedTime;
+    });
   };
 
   const formatDuration = (durationInSeconds: number): string => {
@@ -329,18 +343,19 @@ const Connection: React.FC<ConnectionProps> = ({
 
     const endTime = new Date();
     const endTimeString = endTime.toLocaleTimeString();
+    const startTimeString = new Date(startTimeRef.current).toLocaleTimeString();
     const durationInSeconds = Math.round(
       (endTime.getTime() - startTimeRef.current) / 1000
     );
 
-    if (buffer.length > 0) {
-      const data = buffer;
+    if (bufferRef.current.length > 0) {
+      const data = [...bufferRef.current]; // Create a copy of the current buffer
       setDatasets((prevDatasets) => {
         const newDatasets = [...prevDatasets, data];
         return newDatasets;
       });
 
-      setBuffer([]);
+      bufferRef.current = []; // Clear the buffer ref
     }
 
     toast("Recording completed Successfully", {
@@ -350,7 +365,6 @@ const Connection: React.FC<ConnectionProps> = ({
           <p>End Time: {endTimeString}</p>
           <p>Recording Duration: {formatDuration(durationInSeconds)}</p>
           <p>Stored Recorded Files: {datasets.length + 1}</p>
-          {/* + 1 because not instant updation happens */}
         </div>
       ),
     });
@@ -421,7 +435,7 @@ const Connection: React.FC<ConnectionProps> = ({
               <HoverCard>
                 <HoverCardTrigger asChild>
                   <Button
-                    className="text-lg w-16 h-9 font-medium p-2 border-primary"
+                    className="text-lg w-16 h-9 font-medium p-2 bg-secondary"
                     variant="outline"
                   >
                     {endTimeRef.current === null ? (
@@ -458,7 +472,7 @@ const Connection: React.FC<ConnectionProps> = ({
                         placeholder="Custom"
                         value={customTime}
                         onBlur={handleCustomTimeSet}
-                        onKeyPress={(e) =>
+                        onKeyDown={(e) =>
                           e.key === "Enter" && handleCustomTimeSet()
                         }
                         onChange={handleCustomTimeChange}
