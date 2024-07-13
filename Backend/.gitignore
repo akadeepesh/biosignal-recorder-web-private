@@ -1,0 +1,3 @@
+/venv
+serial_api/serial_api/__pycache__
+serial_api/db.sqlite3
