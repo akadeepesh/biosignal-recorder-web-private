@@ -79,15 +79,15 @@ const Connection: React.FC<ConnectionProps> = ({
     if (minutes === null) {
       setEndTime(null);
       endTimeRef.current = null;
-      toast("Recording set to no time limit");
+      toast.success("Recording set to no time limit");
     } else {
       const newEndTimeSeconds = minutes * 60;
       if (newEndTimeSeconds <= elapsedTime) {
-        toast("End time must be greater than the current elapsed time");
+        toast.error("End time must be greater than the current elapsed time");
       } else {
         setEndTime(newEndTimeSeconds);
         endTimeRef.current = newEndTimeSeconds;
-        toast(`Recording end time set to ${minutes} minutes`);
+        toast.success(`Recording end time set to ${minutes} minutes`);
       }
     }
   };
@@ -102,7 +102,7 @@ const Connection: React.FC<ConnectionProps> = ({
     if (!isNaN(time) && time > 0) {
       handleTimeSelection(time);
     } else {
-      toast("Please enter a valid time in minutes");
+      toast.error("Please enter a valid time in minutes");
     }
     setCustomTime("");
   };
@@ -131,21 +131,6 @@ const Connection: React.FC<ConnectionProps> = ({
     [setSelectedBits]
   );
 
-  useEffect(() => {
-    if (isConnected && portRef.current?.getInfo()) {
-      toast("Connection Successfull", {
-        description: (
-          <div className="mt-2 flex flex-col space-y-1">
-            <p>Device: {formatPortInfo(portRef.current.getInfo())}</p>
-            <p>Baud Rate: 115200</p>
-          </div>
-        ),
-      });
-    } else {
-      toast("Disconnected from device");
-    }
-  }, [isConnected, formatPortInfo]);
-
   const handleClick = () => {
     if (isConnected) {
       disconnectDevice();
@@ -162,6 +147,14 @@ const Connection: React.FC<ConnectionProps> = ({
       setIsConnected(true);
       isConnectedRef.current = true;
       portRef.current = port;
+      toast.success("Connection Successfull", {
+        description: (
+          <div className="mt-2 flex flex-col space-y-1">
+            <p>Device: {formatPortInfo(portRef.current.getInfo())}</p>
+            <p>Baud Rate: 115200</p>
+          </div>
+        ),
+      });
       const reader = port.readable?.getReader();
       readerRef.current = reader;
       readData();
@@ -174,7 +167,7 @@ const Connection: React.FC<ConnectionProps> = ({
     }
   };
 
-  const disconnectDevice = async () => {
+  const disconnectDevice = async (): Promise<void> => {
     try {
       if (portRef.current && portRef.current.readable) {
         if (readerRef.current) {
@@ -183,6 +176,12 @@ const Connection: React.FC<ConnectionProps> = ({
         }
         await portRef.current.close();
         portRef.current = null;
+        toast("Disconnected from device", {
+          action: {
+            label: "Reconnect",
+            onClick: () => connectToDevice(),
+          },
+        });
       }
     } catch (error) {
       console.error("Error during disconnection:", error);
@@ -195,7 +194,7 @@ const Connection: React.FC<ConnectionProps> = ({
     }
   };
 
-  const readData = async () => {
+  const readData = async (): Promise<void> => {
     const decoder = new TextDecoder();
     let lineBuffer = "";
     while (isConnectedRef.current) {
@@ -234,42 +233,49 @@ const Connection: React.FC<ConnectionProps> = ({
     await disconnectDevice();
   };
 
-  const processData = (dataValues: string[]) => {
-    const now = Date.now();
-    const [counter, ...sensorValues] = dataValues.map(Number);
+  const processData = useCallback(
+    (dataValues: string[]) => {
+      const now = Date.now();
+      const [counter, ...sensorValues] = dataValues.map(Number);
 
-    // Sequence number analysis
-    if (
-      lastCounterRef.current !== -1 &&
-      counter !== (lastCounterRef.current + 1) % 256
-    ) {
-      console.log(
-        `Non-sequential counter: expected ${
-          (lastCounterRef.current + 1) % 256
-        }, got ${counter}`
-      );
-      setMissedDataCount((prev) => prev + 1);
-    }
-    lastCounterRef.current = counter;
-
-    // Data rate monitoring
-    dataRateWindowRef.current.push(now);
-    if (dataRateWindowRef.current.length > 250) {
-      const oldestTimestamp = dataRateWindowRef.current.shift()!;
-      const dataRate = 250000 / (now - oldestTimestamp);
-      if (dataRate < 248) {
-        // Allow for small fluctuations
-        console.log(`Data rate too low: ${dataRate.toFixed(2)} samples/second`);
+      // Sequence number analysis
+      if (
+        lastCounterRef.current !== -1 &&
+        counter !== (lastCounterRef.current + 1) % 256
+      ) {
+        console.log(
+          `Non-sequential counter: expected ${
+            (lastCounterRef.current + 1) % 256
+          }, got ${counter}`
+        );
         setMissedDataCount((prev) => prev + 1);
       }
-    }
+      lastCounterRef.current = counter;
 
-    LineData(dataValues);
-    if (missedDataCount > 0) {
-      console.log(`Missed data events in the last second: ${missedDataCount}`);
-      setMissedDataCount(0);
-    }
-  };
+      // Data rate monitoring
+      dataRateWindowRef.current.push(now);
+      if (dataRateWindowRef.current.length > 250) {
+        const oldestTimestamp = dataRateWindowRef.current.shift()!;
+        const dataRate = 250000 / (now - oldestTimestamp);
+        if (dataRate < 248) {
+          // Allow for small fluctuations
+          console.log(
+            `Data rate too low: ${dataRate.toFixed(2)} samples/second`
+          );
+          setMissedDataCount((prev) => prev + 1);
+        }
+      }
+
+      LineData(dataValues);
+      if (missedDataCount > 0) {
+        console.log(
+          `Missed data events in the last second: ${missedDataCount}`
+        );
+        setMissedDataCount(0);
+      }
+    },
+    [LineData, missedDataCount]
+  );
 
   const columnNames = [
     "Counter",
@@ -304,7 +310,7 @@ const Connection: React.FC<ConnectionProps> = ({
         timerIntervalRef.current = setInterval(checkRecordingTime, 1000);
       }
     } else {
-      toast("No device is connected");
+      toast.warning("No device is connected");
     }
   };
 
@@ -337,7 +343,7 @@ const Connection: React.FC<ConnectionProps> = ({
     }
 
     if (startTimeRef.current === null) {
-      toast("Error: Start time was not set properly.");
+      toast.error("Start time was not set properly.");
       return;
     }
 
@@ -358,7 +364,7 @@ const Connection: React.FC<ConnectionProps> = ({
       bufferRef.current = []; // Clear the buffer ref
     }
 
-    toast("Recording completed Successfully", {
+    toast.success("Recording completed Successfully", {
       description: (
         <div className="mt-2 flex flex-col space-y-1">
           <p>Start Time: {startTimeString}</p>
@@ -402,7 +408,7 @@ const Connection: React.FC<ConnectionProps> = ({
       const zipContent = await zip.generateAsync({ type: "blob" });
       saveAs(zipContent, "datasets.zip");
     } else {
-      toast("No data available to download.");
+      toast.error("No data available to download.");
     }
   };
 
@@ -415,7 +421,7 @@ const Connection: React.FC<ConnectionProps> = ({
         await writer.write(dataToSend);
         writer.releaseLock();
       } else {
-        toast("No device is connected");
+        toast.error("No device is connected");
       }
     } catch (error) {
       console.error("Error writing data to device:", error);
