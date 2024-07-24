@@ -13,7 +13,6 @@ import FFTCanvas from "./FFTCanvas";
 import { useTheme } from "next-themes";
 import { Card, CardContent } from "./ui/card";
 import { BitSelection } from "./DataPass";
-import { throttle } from "lodash";
 
 interface CanvasProps {
   data: string;
@@ -30,6 +29,12 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
   const chartRef = useRef<SmoothieChart[]>([]);
   const seriesRef = useRef<(TimeSeries | null)[]>([]);
   const [isChartInitialized, setIsChartInitialized] = useState(false);
+
+  const batchSize = 10;
+  const batchBuffer = useMemo<Array<{ time: number; values: number[] }>>(
+    () => [],
+    []
+  );
 
   const getChannelColor = useCallback((index: number) => {
     const colors = ["red", "green", "blue", "purple"];
@@ -118,33 +123,58 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
     getChannelColor,
   ]);
 
+  const processBatch = useCallback(() => {
+    if (batchBuffer.length === 0) return;
+
+    batchBuffer.forEach((batch) => {
+      channels.forEach((channel, index) => {
+        if (channel && !isPaused[index]) {
+          const series = seriesRef.current[index];
+          if (series && !isNaN(batch.values[index])) {
+            series.append(batch.time, batch.values[index]);
+          }
+        }
+      });
+    });
+
+    batchBuffer.length = 0;
+  }, [channels, isPaused, batchBuffer]);
+
   const handleDataUpdate = useCallback(
     (line: string) => {
       if (line.trim() !== "") {
         const sensorValues = line.split(",").map(Number).slice(1);
-        channels.forEach((channel, index) => {
-          if (channel && !isPaused[index]) {
-            const canvas = document.getElementById(
-              `smoothie-chart-${index + 1}`
-            );
-            if (canvas) {
-              const data = sensorValues[index];
-              if (!isNaN(data)) {
-                const series = seriesRef.current[index];
-                series?.append(Date.now(), data);
-              }
-            }
-          }
-        });
+        const timestamp = Date.now();
+
+        batchBuffer.push({ time: timestamp, values: sensorValues });
+
+        if (batchBuffer.length >= batchSize) {
+          processBatch();
+        }
       }
     },
-    [channels, isPaused]
+    [processBatch, batchBuffer]
   );
 
-  const throttledHandleDataUpdate = useMemo(
-    () => throttle(handleDataUpdate, 0),
-    [handleDataUpdate]
-  );
+  useEffect(() => {
+    if (isChartInitialized) {
+      const lines = String(data).split("\n");
+      lines.forEach(handleDataUpdate);
+    }
+  }, [data, isChartInitialized, handleDataUpdate]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (batchBuffer.length > 0) {
+        processBatch();
+      }
+    }, 100);
+
+    return () => {
+      clearInterval(intervalId);
+      processBatch(); // Process any remaining data
+    };
+  }, [processBatch, batchBuffer]);
 
   useEffect(() => {
     if (!isChartInitialized) {
@@ -226,21 +256,6 @@ const Canvas: React.FC<CanvasProps> = ({ data, selectedBits }) => {
       });
     }
   }, [selectedBits, isChartInitialized, getMaxValue, shouldAutoScale]);
-
-  useEffect(() => {
-    if (isChartInitialized) {
-      const lines = String(data).split("\n");
-      lines.forEach((line) => {
-        throttledHandleDataUpdate(line);
-      });
-    }
-  }, [data, isChartInitialized, throttledHandleDataUpdate]);
-
-  useEffect(() => {
-    return () => {
-      throttledHandleDataUpdate.cancel();
-    };
-  }, [throttledHandleDataUpdate]);
 
   useEffect(() => {
     if (isChartInitialized) {

@@ -1,3 +1,5 @@
 /venv
 serial_api/serial_api/__pycache__
+serial_api/api_app/__pycache__
+serial_api/api_app/migrations/__pycache__
 serial_api/db.sqlite3
