@@ -71,67 +71,6 @@ const Connection: React.FC<ConnectionProps> = ({
     ReadableStreamDefaultReader<Uint8Array> | null | undefined
   >(null);
 
-  const socket = useRef<WebSocket | null>(null);
-  const [isWebSocketStreaming, setIsWebSocketStreaming] =
-    useState<boolean>(false);
-  const [deviceInfo, setDeviceInfo] = useState<string | null>(null);
-
-  const connectWebSocket = useCallback(() => {
-    socket.current = new WebSocket("ws://localhost:8000/ws/arduino/");
-    socket.current.onopen = () => {
-      console.log("WebSocket connected");
-    };
-    socket.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data) {
-        console.log(data);
-        setDeviceInfo(`${data.description})`);
-        toast.success(`Device detected: ${data.description}`);
-      } else if (data.type === "data") {
-        const values = data.data.split(",");
-        LineData(values);
-      }
-    };
-    socket.current.onclose = () => {
-      setIsWebSocketStreaming(false);
-      console.log("WebSocket disconnected");
-      // Attempt to reconnect after a short delay
-      setTimeout(connectWebSocket, 3000);
-    };
-  }, [LineData]);
-
-  const disconnectWebSocket = () => {
-    Connection(false);
-    setIsConnected(false);
-    isConnectedRef.current = false;
-    if (socket.current) {
-      socket.current.close();
-    }
-  };
-
-  const startWebSocketStream = () => {
-    if (socket.current && socket.current.readyState === WebSocket.OPEN) {
-      socket.current.send(JSON.stringify({ action: "start" }));
-      setIsWebSocketStreaming(true);
-      Connection(true);
-      setIsConnected(true);
-      isConnectedRef.current = true;
-      toast.success("WebSocket streaming started");
-    } else {
-      toast.error("WebSocket not connected");
-    }
-  };
-
-  const stopWebSocketStream = () => {
-    if (socket.current) {
-      console.log("first stop");
-      socket.current.send(JSON.stringify({ action: "stop" }));
-      // setIsWebSocketStreaming(false);
-      toast.success("WebSocket streaming stopped");
-    }
-    disconnectWebSocket();
-  };
-
   const handleBitSelection = (value: string) => {
     setSelectedBits(value as BitSelection);
   };
@@ -489,18 +428,6 @@ const Connection: React.FC<ConnectionProps> = ({
     }
   };
 
-  useEffect(() => {
-    connectWebSocket();
-
-    return () => {
-      if (socket.current) {
-        socket.current.close();
-      } else {
-        console.log("error");
-      }
-    };
-  }, [connectWebSocket]);
-
   return (
     <div className="flex h-14 items-center justify-between px-4">
       <div className="flex-1">
@@ -642,20 +569,6 @@ const Connection: React.FC<ConnectionProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        )}
-        {deviceInfo && (
-          <>
-            <Button
-              className="gap-2"
-              onClick={
-                isWebSocketStreaming
-                  ? stopWebSocketStream
-                  : startWebSocketStream
-              }
-            >
-              {isWebSocketStreaming ? "Stop WS Stream" : "Start WS Stream"}
-            </Button>
-          </>
         )}
       </div>
       <div className="flex-1"></div>

@@ -9,7 +9,7 @@ interface WebSocketMessage {
   message?: string;
 }
 
-const ArduinoControl: React.FC = () => {
+const ConnectionWS: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const socketRef = useRef<WebSocket | null>(null);
@@ -69,7 +69,9 @@ const ArduinoControl: React.FC = () => {
   }, []);
 
   const handleStreamToggle = useCallback(() => {
-    sendCommand(isStreaming ? "stop" : "start");
+    const command = isStreaming ? "stop" : "start";
+    sendCommand(command);
+    // Let the backend control the streaming state
   }, [isStreaming, sendCommand]);
 
   const handleDisconnect = useCallback(() => {
@@ -95,4 +97,4 @@ const ArduinoControl: React.FC = () => {
   );
 };
 
-export default ArduinoControl;
+export default ConnectionWS;

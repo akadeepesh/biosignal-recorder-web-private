@@ -1,6 +1,6 @@
 "use client";
 import Connection from "./Connection";
-import ArduinoControl from "./ConnectionWS";
+import ConnectionWS from "./ConnectionWS";
 import Steps from "./Steps";
 import React, { useState } from "react";
 import Canvas from "./Canvas";
@@ -25,7 +25,7 @@ const DataPass = () => {
         selectedBits={selectedBits}
         setSelectedBits={setSelectedBits}
       /> */}
-      <ArduinoControl />
+      <ConnectionWS />
     </>
   );
 };
